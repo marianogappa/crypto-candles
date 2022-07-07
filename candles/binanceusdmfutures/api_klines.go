@@ -10,9 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/marianogappa/crypto-candles/candles/common"
 	"github.com/rs/zerolog/log"
-
-	"github.com/marianogappa/crypto-candles/common"
 )
 
 type errorResponse struct {

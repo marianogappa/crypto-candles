@@ -38,7 +38,7 @@ import (
 	"time"
 
 	lru "github.com/hashicorp/golang-lru"
-	"github.com/marianogappa/crypto-candles/common"
+	"github.com/marianogappa/crypto-candles/candles/common"
 )
 
 // MemoryCache implements the in-memory LRU cache layer that this package exposes.

@@ -5,15 +5,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/marianogappa/crypto-candles/binance"
-	"github.com/marianogappa/crypto-candles/binanceusdmfutures"
-	"github.com/marianogappa/crypto-candles/bitstamp"
-	"github.com/marianogappa/crypto-candles/cache"
-	"github.com/marianogappa/crypto-candles/coinbase"
-	"github.com/marianogappa/crypto-candles/common"
-	"github.com/marianogappa/crypto-candles/ftx"
-	"github.com/marianogappa/crypto-candles/iterator"
-	"github.com/marianogappa/crypto-candles/kucoin"
+	"github.com/marianogappa/crypto-candles/candles/binance"
+	"github.com/marianogappa/crypto-candles/candles/binanceusdmfutures"
+	"github.com/marianogappa/crypto-candles/candles/bitstamp"
+	"github.com/marianogappa/crypto-candles/candles/cache"
+	"github.com/marianogappa/crypto-candles/candles/coinbase"
+	"github.com/marianogappa/crypto-candles/candles/common"
+	"github.com/marianogappa/crypto-candles/candles/ftx"
+	"github.com/marianogappa/crypto-candles/candles/iterator"
+	"github.com/marianogappa/crypto-candles/candles/kucoin"
 )
 
 // IMarket only exists so that tests can use a test iterator.

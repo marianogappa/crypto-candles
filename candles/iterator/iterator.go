@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/marianogappa/crypto-candles/cache"
-	"github.com/marianogappa/crypto-candles/common"
+	"github.com/marianogappa/crypto-candles/candles/cache"
+	"github.com/marianogappa/crypto-candles/candles/common"
 	"github.com/rs/zerolog/log"
 )
 

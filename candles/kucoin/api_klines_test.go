@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/marianogappa/predictions/candles/common"
+	"github.com/marianogappa/crypto-candles/candles/common"
 )
 
 func TestHappyToCandlesticks(t *testing.T) {

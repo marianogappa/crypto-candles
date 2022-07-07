@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/marianogappa/crypto-candles/common"
+	"github.com/marianogappa/crypto-candles/candles/common"
 )
 
 // Coinbase struct enables requesting candlesticks from Coinbase

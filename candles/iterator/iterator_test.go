@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/marianogappa/crypto-candles/cache"
-	"github.com/marianogappa/crypto-candles/common"
+	"github.com/marianogappa/crypto-candles/candles/cache"
+	"github.com/marianogappa/crypto-candles/candles/common"
 	"github.com/stretchr/testify/require"
 )
 

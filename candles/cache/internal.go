@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/marianogappa/crypto-candles/common"
+	"github.com/marianogappa/crypto-candles/candles/common"
 )
 
 func (c *MemoryCache) put(metric Metric, candlesticks []common.Candlestick) error {
