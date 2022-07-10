@@ -58,3 +58,9 @@ Outputs
 {"t":1657465200,"o":20863.919999999998,"c":20899.759999999998,"l":20839.23,"h":20979.759999999998}
 {"t":1657468800,"o":20898.439999999999,"c":20932.349999999999,"l":20655,"h":21052.470000000001}
 ```
+
+# CLI usage
+
+```shell
+$ cryptocandles -baseAsset BTC -quoteAsset USDT -provider BINANCE -startTime '2022-01-02T03:04:05Z' -candlestickInterval 1h
+```
