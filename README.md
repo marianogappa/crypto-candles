@@ -64,3 +64,37 @@ Outputs
 ```shell
 $ cryptocandles -baseAsset BTC -quoteAsset USDT -provider BINANCE -startTime '2022-01-02T03:04:05Z' -candlestickInterval 1h
 ```
+
+# Supported exchanges
+
+- Binance
+- Binance USDM Futures
+- FTX
+- Coinbase
+- Kucoin
+- Bitstamp
+- Bitfinex
+
+(Phemex, Huobi & Kraken are not supported because they don't provide historical candlesticks or they provide them in a very inconvenient way)
+
+# Features
+
+## Caching
+
+Historical candlesticks shouldn't change, so this kind of data benefits from aggressive caching. This library has a configurable concurrency-safe in-memory cache (enabled by default) so that repeated requests for the same data will be served by the cache rather than going to the exchanges, thus mitigating rate-limiting issues. Caches are configurable per-candlestick interval.
+
+## Automatic back-off & retries
+
+Requests to exchanges can fail for various reasons, some of which are retryable. The library will retry retryable requests with a back-off by default, and will deal with exchange-specific rate-limiting actions.
+
+## Concurrency-safe
+
+The main problem with making concurrent requests to exchanges is not that libraries are not concurrency-safe, but that making concurrent requests will cause the exchange to rate-limit the caller. This library mutexes on a per-exchange basis, so concurrent requests to the same exchange become sequential, but concurrent requests to different exchanges remain concurrent.
+
+## Unified error types
+
+Requests to exchanges can fail for various reasons, but some errors are common to all exchanges. In these cases, the library provides some common error types, e.g.:
+
+- `common.ErrUnsupportedCandlestickInterval`
+- `common.ErrRateLimit`
+- `common.ErrInvalidMarketPair`
