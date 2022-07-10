@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/marianogappa/crypto-candles/candles/common"
+	"github.com/stretchr/testify/require"
 )
 
 func TestHappyToCandlesticks(t *testing.T) {
@@ -29,19 +31,15 @@ func TestHappyToCandlesticks(t *testing.T) {
 		]
 	]`
 
-	sr := successfulResponse{}
-	err := json.Unmarshal([]byte(testCandlestick), &sr.ResponseCandlesticks)
-	if err != nil {
-		t.Fatalf("Unmarshal failed: %v", err)
-	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, testCandlestick)
+	}))
+	defer ts.Close()
 
-	cs, err := sr.toCandlesticks()
-	if err != nil {
-		t.Fatalf("Candlestick should have converted successfully but returned: %v", err)
-	}
-	if len(cs) != 1 {
-		t.Fatalf("Should have converted 1 candlesticks but converted: %v", len(cs))
-	}
+	b := NewBinance()
+	b.requester.Strategy = common.RetryStrategy{Attempts: 1}
+	b.apiURL = ts.URL + "/"
+
 	expected := common.Candlestick{
 		Timestamp:    1499040000,
 		OpenPrice:    f(0.01634790),
@@ -49,9 +47,11 @@ func TestHappyToCandlesticks(t *testing.T) {
 		LowestPrice:  f(0.01575800),
 		HighestPrice: f(0.80000000),
 	}
-	if cs[0] != expected {
-		t.Fatalf("Candlestick should have been %v but was %v", expected, cs[0])
-	}
+
+	actual, err := b.RequestCandlesticks(msBTCUSDT, tp("2017-07-03T00:00:00+00:00"), time.Minute)
+	require.Nil(t, err)
+	require.Len(t, actual, 1)
+	require.Equal(t, actual[0], expected)
 }
 
 func TestUnhappyToCandlesticks(t *testing.T) {
@@ -513,6 +513,41 @@ func TestKlinesInvalidFloatsInJSONResponse(t *testing.T) {
 	_, err := b.RequestCandlesticks(msBTCUSDT, tp("2021-07-04T14:14:18+00:00"), time.Minute)
 	if err == nil {
 		t.Fatalf("should have failed due to invalid floats in json")
+	}
+}
+
+func TestTimeframe1m(t *testing.T) {
+	timeframes := map[time.Duration]string{
+		1 * time.Minute:            "1m",
+		3 * time.Minute:            "3m",
+		5 * time.Minute:            "5m",
+		15 * time.Minute:           "15m",
+		30 * time.Minute:           "30m",
+		1 * 60 * time.Minute:       "1h",
+		2 * 60 * time.Minute:       "2h",
+		4 * 60 * time.Minute:       "4h",
+		6 * 60 * time.Minute:       "6h",
+		8 * 60 * time.Minute:       "8h",
+		12 * 60 * time.Minute:      "12h",
+		1 * 60 * 24 * time.Minute:  "1d",
+		3 * 60 * 24 * time.Minute:  "3d",
+		7 * 60 * 24 * time.Minute:  "1w",
+		30 * 60 * 24 * time.Minute: "1M",
+	}
+
+	for candlestickInterval, timeframe := range timeframes {
+		t.Run(timeframe, func(t *testing.T) {
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, timeframe, strings.Split(r.URL.Path, ":")[1])
+			}))
+			defer ts.Close()
+
+			b := NewBinance()
+			b.requester.Strategy = common.RetryStrategy{Attempts: 1}
+			b.apiURL = ts.URL + "/"
+
+			b.RequestCandlesticks(msBTCUSDT, tp("2019-08-02T19:41:00+00:00"), candlestickInterval)
+		})
 	}
 }
 
