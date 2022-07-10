@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"log"
 	"time"
-  "encoding/json"
+	"encoding/json"
 
 	"github.com/marianogappa/crypto-candles/candles"
 	"github.com/marianogappa/crypto-candles/candles/common"
@@ -38,7 +38,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-    bs, _ := json.Marshal(candlestick)
+		bs, _ := json.Marshal(candlestick)
 		fmt.Printf("%+v\n", string(bs))
 	}
 }
