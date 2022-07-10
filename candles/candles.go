@@ -1,3 +1,46 @@
+// Package candles implements a Market, from which Iterators can be created.
+//
+// The Market guarantees that no two requests to the same exchange happen concurrently, and owns the cache, so you
+// should only construct a Market once.
+//
+// An Iterator iterates over candlesticks of a given candlestick interval (e.g. 1 hour) starting at a specified time
+// (e.g. 2022-01-02T03:04:05Z), for a given crypto market pair (e.g. BTC/USDT) provided by an exchange (e.g. BINANCE).
+//
+// Here's an example usage:
+//
+// ```
+// package main
+//
+// import (
+// 	"fmt"
+// 	"log"
+// 	"time"
+// 	"encoding/json"
+//
+// 	"github.com/marianogappa/crypto-candles/candles"
+// 	"github.com/marianogappa/crypto-candles/candles/common"
+// )
+// func main() {
+// 	m := candles.NewMarket()
+// 	iter, err := m.Iterator(
+// 		common.MarketSource{Type: common.COIN, Provider: common.BINANCE, BaseAsset: "BTC", QuoteAsset: "USDT"},
+// 		time.Now().Add(-12*time.Hour), // Start time
+// 		1*time.Hour,                   // Candlestick interval
+// 	)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+//
+// 	for i := 0; i < 10; i++ {
+// 		candlestick, err := iter.Next()
+// 		if err != nil {
+// 			log.Fatal(err)
+// 		}
+// 		bs, _ := json.Marshal(candlestick)
+// 		fmt.Printf("%+v\n", string(bs))
+// 	}
+// }
+// ```
 package candles
 
 import (
