@@ -37,6 +37,7 @@ func TestHappyToCandlesticks(t *testing.T) {
 	defer ts.Close()
 
 	b := NewBinance()
+	b.SetDebug(true)
 	b.requester.Strategy = common.RetryStrategy{Attempts: 1}
 	b.apiURL = ts.URL + "/"
 
@@ -52,6 +53,50 @@ func TestHappyToCandlesticks(t *testing.T) {
 	require.Nil(t, err)
 	require.Len(t, actual, 1)
 	require.Equal(t, actual[0], expected)
+}
+
+func TestOutOfCandlesticks(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, `[]`)
+	}))
+	defer ts.Close()
+
+	b := NewBinance()
+	b.requester.Strategy = common.RetryStrategy{Attempts: 1}
+	b.apiURL = ts.URL + "/"
+
+	_, err := b.RequestCandlesticks(msBTCUSDT, tp("2017-07-03T00:00:00+00:00"), time.Minute)
+	require.ErrorIs(t, err.(common.CandleReqError).Err, common.ErrOutOfCandlesticks)
+}
+
+func TestErrUnsupportedCandlestickInterval(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, `[]`)
+	}))
+	defer ts.Close()
+
+	b := NewBinance()
+	b.requester.Strategy = common.RetryStrategy{Attempts: 1}
+	b.apiURL = ts.URL + "/"
+
+	_, err := b.RequestCandlesticks(msBTCUSDT, tp("2017-07-03T00:00:00+00:00"), 160*time.Minute)
+	require.ErrorIs(t, err.(common.CandleReqError).Err, common.ErrUnsupportedCandlestickInterval)
+}
+
+func TestErrTooManyRequests(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Retry-After", "5")
+		w.WriteHeader(429)
+		fmt.Fprintln(w, `{"code":-1234,"msg":"Too many requests"}`)
+	}))
+	defer ts.Close()
+
+	b := NewBinance()
+	b.requester.Strategy = common.RetryStrategy{Attempts: 1}
+	b.apiURL = ts.URL + "/"
+
+	_, err := b.RequestCandlesticks(msBTCUSDT, tp("2017-07-03T00:00:00+00:00"), 1*time.Minute)
+	require.ErrorIs(t, err.(common.CandleReqError).Err, common.ErrRateLimit)
 }
 
 func TestUnhappyToCandlesticks(t *testing.T) {
@@ -470,6 +515,21 @@ func TestKlinesErrorResponse(t *testing.T) {
 		t.Fatalf("should have failed due to error response")
 	}
 }
+
+func TestKlinesErrorInvalidMarketPair(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, `{"code":-1121,"msg":"Invalid symbol."}`)
+	}))
+	defer ts.Close()
+
+	b := NewBinance()
+	b.requester.Strategy = common.RetryStrategy{Attempts: 1}
+	b.apiURL = ts.URL + "/"
+
+	_, err := b.RequestCandlesticks(msBTCUSDT, tp("2021-07-04T14:14:18+00:00"), time.Minute)
+	require.Equal(t, err.(common.CandleReqError).Err, common.ErrInvalidMarketPair)
+}
+
 func TestKlinesInvalidJSONResponse(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, `invalid json`)
@@ -549,6 +609,14 @@ func TestTimeframe1m(t *testing.T) {
 			b.RequestCandlesticks(msBTCUSDT, tp("2019-08-02T19:41:00+00:00"), candlestickInterval)
 		})
 	}
+}
+
+func TestPatience(t *testing.T) {
+	require.Equal(t, 0*time.Minute, NewBinance().Patience())
+}
+
+func TestName(t *testing.T) {
+	require.Equal(t, "BINANCE", NewBinance().Name())
 }
 
 func f(fl float64) common.JSONFloat64 {
