@@ -49,7 +49,6 @@ func (r response) toCandlesticks() []common.Candlestick {
 			ClosePrice:   common.JSONFloat64(raw.Close),
 			LowestPrice:  common.JSONFloat64(raw.Low),
 			HighestPrice: common.JSONFloat64(raw.High),
-			Volume:       common.JSONFloat64(raw.Volume),
 		}
 		candlesticks[i] = candlestick
 	}
@@ -57,11 +56,11 @@ func (r response) toCandlesticks() []common.Candlestick {
 	return candlesticks
 }
 
-func (e *FTX) requestCandlesticks(baseAsset string, quoteAsset string, startTimeSecs int, intervalMinutes int) ([]common.Candlestick, error) {
+func (e *FTX) requestCandlesticks(baseAsset string, quoteAsset string, startTime time.Time, candlestickInterval time.Duration) ([]common.Candlestick, error) {
 	req, _ := http.NewRequest("GET", fmt.Sprintf("%vmarkets/%v/%v/candles", e.apiURL, strings.ToUpper(baseAsset), strings.ToUpper(quoteAsset)), nil)
 	q := req.URL.Query()
 
-	resolution := intervalMinutes * 60
+	resolution := int(candlestickInterval / time.Second)
 
 	validResolutions := map[int]bool{
 		15:    true,
@@ -80,11 +79,11 @@ func (e *FTX) requestCandlesticks(baseAsset string, quoteAsset string, startTime
 	}
 
 	q.Add("resolution", fmt.Sprintf("%v", resolution))
-	q.Add("start_time", fmt.Sprintf("%v", startTimeSecs))
+	q.Add("start_time", fmt.Sprintf("%v", startTime.Unix()))
 
 	// N.B.: if you don't supply end_time, or if you supply a very large range, FTX silently ignores this and
 	// instead gives you recent data.
-	q.Add("end_time", fmt.Sprintf("%v", startTimeSecs+1000*intervalMinutes*60))
+	q.Add("end_time", fmt.Sprintf("%v", int(startTime.Unix())+1000*resolution))
 
 	req.URL.RawQuery = q.Encode()
 

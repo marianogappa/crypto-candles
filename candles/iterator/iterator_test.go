@@ -16,7 +16,7 @@ type testSpec struct {
 	startTime                        time.Time
 	candlestickProvider              *testCandlestickProvider
 	timeNowFunc                      func() time.Time
-	intervalMinutes                  int
+	candlestickInterval              time.Duration
 	startFromNext                    bool
 	errCreatingIterator              error
 	expectedCandlestickProviderCalls []call
@@ -34,7 +34,7 @@ func TestIterator(t *testing.T) {
 		// Minutely tests
 		{
 			name:                             "Minutely: ErrNoNewTicksYet because timestamp to request is too early (startFromNext == false)",
-			intervalMinutes:                  1,
+			candlestickInterval:              1 * time.Minute,
 			marketSource:                     msBTCUSDT,
 			startTime:                        tp("2020-01-02 00:01:10"), // 49 secs to nw
 			candlestickProvider:              newTestCandlestickProvider(nil),
@@ -46,7 +46,7 @@ func TestIterator(t *testing.T) {
 		},
 		{
 			name:                             "Minutely: ErrNoNewTicksYet because timestamp to request is too early (startFromNext == true)",
-			intervalMinutes:                  1,
+			candlestickInterval:              1 * time.Minute,
 			marketSource:                     msBTCUSDT,
 			startTime:                        tp("2020-01-02 00:01:10"),
 			candlestickProvider:              newTestCandlestickProvider(nil),
@@ -57,24 +57,24 @@ func TestIterator(t *testing.T) {
 			expectedCallResponses:            []response{{tick: common.Tick{}, err: common.ErrNoNewTicksYet}},
 		},
 		{
-			name:            "Minutely: ErrOutOfCandlestics because candlestickProvider returned that",
-			intervalMinutes: 1,
-			marketSource:    msBTCUSDT,
-			startTime:       tp("2020-01-02 00:01:10"),
+			name:                "Minutely: ErrOutOfCandlestics because candlestickProvider returned that",
+			candlestickInterval: 1 * time.Minute,
+			marketSource:        msBTCUSDT,
+			startTime:           tp("2020-01-02 00:01:10"),
 			candlestickProvider: newTestCandlestickProvider([]testCandlestickProviderResponse{
 				{candlesticks: []common.Candlestick{}, err: common.ErrOutOfCandlesticks},
 			}),
 			timeNowFunc:                      func() time.Time { return tp("2020-01-03 00:00:00") },
 			startFromNext:                    false,
 			errCreatingIterator:              nil,
-			expectedCandlestickProviderCalls: []call{{marketSource: msBTCUSDT, startTimeTs: tInt("2020-01-02 00:02:00")}},
+			expectedCandlestickProviderCalls: []call{{marketSource: msBTCUSDT, startTime: tp("2020-01-02 00:02:00")}},
 			expectedCallResponses:            []response{{tick: common.Tick{}, err: common.ErrOutOfCandlesticks}},
 		},
 		{
-			name:            "Minutely: ErrExchangeReturnedNoTicks because exchange returned old ticks",
-			intervalMinutes: 1,
-			marketSource:    msBTCUSDT,
-			startTime:       tp("2020-01-02 00:01:10"),
+			name:                "Minutely: ErrExchangeReturnedNoTicks because exchange returned old ticks",
+			candlestickInterval: 1 * time.Minute,
+			marketSource:        msBTCUSDT,
+			startTime:           tp("2020-01-02 00:01:10"),
 			candlestickProvider: newTestCandlestickProvider([]testCandlestickProviderResponse{
 				{candlesticks: []common.Candlestick{
 					{Timestamp: tInt("2020-01-02 00:00:00"), OpenPrice: 1234, HighestPrice: 1234, LowestPrice: 1234, ClosePrice: 1234},
@@ -83,14 +83,14 @@ func TestIterator(t *testing.T) {
 			timeNowFunc:                      func() time.Time { return tp("2020-01-03 00:00:00") },
 			startFromNext:                    false,
 			errCreatingIterator:              nil,
-			expectedCandlestickProviderCalls: []call{{marketSource: msBTCUSDT, startTimeTs: tInt("2020-01-02 00:02:00")}},
+			expectedCandlestickProviderCalls: []call{{marketSource: msBTCUSDT, startTime: tp("2020-01-02 00:02:00")}},
 			expectedCallResponses:            []response{{tick: common.Tick{}, err: common.ErrExchangeReturnedNoTicks}},
 		},
 		{
-			name:            "Minutely: ErrExchangeReturnedOutOfSyncTick because exchange returned ticks after requested one",
-			intervalMinutes: 1,
-			marketSource:    msBTCUSDT,
-			startTime:       tp("2020-01-02 00:01:10"),
+			name:                "Minutely: ErrExchangeReturnedOutOfSyncTick because exchange returned ticks after requested one",
+			candlestickInterval: 1 * time.Minute,
+			marketSource:        msBTCUSDT,
+			startTime:           tp("2020-01-02 00:01:10"),
 			candlestickProvider: newTestCandlestickProvider([]testCandlestickProviderResponse{
 				{candlesticks: []common.Candlestick{
 					{Timestamp: tInt("2020-01-02 00:03:00"), OpenPrice: 1234, HighestPrice: 1234, LowestPrice: 1234, ClosePrice: 1234},
@@ -99,14 +99,14 @@ func TestIterator(t *testing.T) {
 			timeNowFunc:                      func() time.Time { return tp("2020-01-03 00:00:00") },
 			startFromNext:                    false,
 			errCreatingIterator:              nil,
-			expectedCandlestickProviderCalls: []call{{marketSource: msBTCUSDT, startTimeTs: tInt("2020-01-02 00:02:00")}},
+			expectedCandlestickProviderCalls: []call{{marketSource: msBTCUSDT, startTime: tp("2020-01-02 00:02:00")}},
 			expectedCallResponses:            []response{{tick: common.Tick{}, err: common.ErrExchangeReturnedOutOfSyncTick}},
 		},
 		{
-			name:            "Minutely: Succeeds to request one tick",
-			intervalMinutes: 1,
-			marketSource:    msBTCUSDT,
-			startTime:       tp("2020-01-02 00:01:10"),
+			name:                "Minutely: Succeeds to request one tick",
+			candlestickInterval: 1 * time.Minute,
+			marketSource:        msBTCUSDT,
+			startTime:           tp("2020-01-02 00:01:10"),
 			candlestickProvider: newTestCandlestickProvider([]testCandlestickProviderResponse{
 				{candlesticks: []common.Candlestick{
 					{Timestamp: tInt("2020-01-02 00:02:00"), OpenPrice: 1234, HighestPrice: 1234, LowestPrice: 1234, ClosePrice: 1234}}, err: nil},
@@ -114,14 +114,14 @@ func TestIterator(t *testing.T) {
 			timeNowFunc:                      func() time.Time { return tp("2020-01-03 00:00:00") },
 			startFromNext:                    false,
 			errCreatingIterator:              nil,
-			expectedCandlestickProviderCalls: []call{{marketSource: msBTCUSDT, startTimeTs: tInt("2020-01-02 00:02:00")}},
+			expectedCandlestickProviderCalls: []call{{marketSource: msBTCUSDT, startTime: tp("2020-01-02 00:02:00")}},
 			expectedCallResponses:            []response{{tick: common.Tick{Timestamp: tInt("2020-01-02 00:02:00"), Value: 1234}, err: nil}},
 		},
 		{
-			name:            "Minutely: Succeeds to request two ticks, making only one request",
-			intervalMinutes: 1,
-			marketSource:    msBTCUSDT,
-			startTime:       tp("2020-01-02 00:02:00"),
+			name:                "Minutely: Succeeds to request two ticks, making only one request",
+			candlestickInterval: 1 * time.Minute,
+			marketSource:        msBTCUSDT,
+			startTime:           tp("2020-01-02 00:02:00"),
 			candlestickProvider: newTestCandlestickProvider([]testCandlestickProviderResponse{
 				{candlesticks: []common.Candlestick{
 					{Timestamp: tInt("2020-01-02 00:02:00"), OpenPrice: 1234, HighestPrice: 1234, LowestPrice: 1234, ClosePrice: 1234},
@@ -130,16 +130,16 @@ func TestIterator(t *testing.T) {
 			timeNowFunc:                      func() time.Time { return tp("2020-01-03 00:00:00") },
 			startFromNext:                    false,
 			errCreatingIterator:              nil,
-			expectedCandlestickProviderCalls: []call{{marketSource: msBTCUSDT, startTimeTs: tInt("2020-01-02 00:02:00")}},
+			expectedCandlestickProviderCalls: []call{{marketSource: msBTCUSDT, startTime: tp("2020-01-02 00:02:00")}},
 			expectedCallResponses: []response{
 				{tick: common.Tick{Timestamp: tInt("2020-01-02 00:02:00"), Value: 1234}, err: nil},
 				{tick: common.Tick{Timestamp: tInt("2020-01-02 00:03:00"), Value: 1235}, err: nil}},
 		},
 		{
-			name:            "Minutely: Ignores cache Put error",
-			intervalMinutes: 1,
-			marketSource:    msBTCUSDT,
-			startTime:       tp("2020-01-02 00:02:00"),
+			name:                "Minutely: Ignores cache Put error",
+			candlestickInterval: 1 * time.Minute,
+			marketSource:        msBTCUSDT,
+			startTime:           tp("2020-01-02 00:02:00"),
 			candlestickProvider: newTestCandlestickProvider([]testCandlestickProviderResponse{
 				{candlesticks: []common.Candlestick{
 					{Timestamp: tInt("2020-01-02 00:02:00"), OpenPrice: 0, HighestPrice: 0, LowestPrice: 0, ClosePrice: 0}}, err: nil},
@@ -147,7 +147,7 @@ func TestIterator(t *testing.T) {
 			timeNowFunc:                      func() time.Time { return tp("2020-01-03 00:00:00") },
 			startFromNext:                    false,
 			errCreatingIterator:              nil,
-			expectedCandlestickProviderCalls: []call{{marketSource: msBTCUSDT, startTimeTs: tInt("2020-01-02 00:02:00")}},
+			expectedCandlestickProviderCalls: []call{{marketSource: msBTCUSDT, startTime: tp("2020-01-02 00:02:00")}},
 			expectedCallResponses: []response{
 				{tick: common.Tick{Timestamp: tInt("2020-01-02 00:02:00"), Value: 0}, err: nil},
 			},
@@ -155,7 +155,7 @@ func TestIterator(t *testing.T) {
 		// Daily tests
 		{
 			name:                             "Daily: ErrNoNewTicksYet because timestamp to request is too early (startFromNext == false)",
-			intervalMinutes:                  60 * 24,
+			candlestickInterval:              24 * time.Hour,
 			marketSource:                     msBTCUSDT,
 			startTime:                        tp("2020-01-02 00:01:10"),
 			candlestickProvider:              newTestCandlestickProvider(nil),
@@ -167,7 +167,7 @@ func TestIterator(t *testing.T) {
 		},
 		{
 			name:                             "Daily: ErrNoNewTicksYet because timestamp to request is too early (startFromNext == true)",
-			intervalMinutes:                  60 * 24,
+			candlestickInterval:              24 * time.Hour,
 			marketSource:                     msBTCUSDT,
 			startTime:                        tp("2020-01-02 00:01:10"),
 			candlestickProvider:              newTestCandlestickProvider(nil),
@@ -178,10 +178,10 @@ func TestIterator(t *testing.T) {
 			expectedCallResponses:            []response{{tick: common.Tick{}, err: common.ErrNoNewTicksYet}},
 		},
 		{
-			name:            "Daily: ErrExchangeReturnedNoTicks because exchange returned old ticks",
-			intervalMinutes: 60 * 24,
-			marketSource:    msBTCUSDT,
-			startTime:       tp("2020-01-02 00:01:10"),
+			name:                "Daily: ErrExchangeReturnedNoTicks because exchange returned old ticks",
+			candlestickInterval: 24 * time.Hour,
+			marketSource:        msBTCUSDT,
+			startTime:           tp("2020-01-02 00:01:10"),
 			candlestickProvider: newTestCandlestickProvider([]testCandlestickProviderResponse{
 				{candlesticks: []common.Candlestick{
 					{Timestamp: tInt("2020-01-01 00:00:00"), OpenPrice: 1234, HighestPrice: 1234, LowestPrice: 1234, ClosePrice: 1234},
@@ -190,14 +190,14 @@ func TestIterator(t *testing.T) {
 			timeNowFunc:                      func() time.Time { return tp("2020-01-04 00:00:00") },
 			startFromNext:                    false,
 			errCreatingIterator:              nil,
-			expectedCandlestickProviderCalls: []call{{marketSource: msBTCUSDT, startTimeTs: tInt("2020-01-03 00:00:00")}},
+			expectedCandlestickProviderCalls: []call{{marketSource: msBTCUSDT, startTime: tp("2020-01-03 00:00:00")}},
 			expectedCallResponses:            []response{{tick: common.Tick{}, err: common.ErrExchangeReturnedNoTicks}},
 		},
 		{
-			name:            "Daily: ErrExchangeReturnedOutOfSyncTick because exchange returned ticks after requested one",
-			intervalMinutes: 60 * 24,
-			marketSource:    msBTCUSDT,
-			startTime:       tp("2020-01-02 00:01:10"),
+			name:                "Daily: ErrExchangeReturnedOutOfSyncTick because exchange returned ticks after requested one",
+			candlestickInterval: 24 * time.Hour,
+			marketSource:        msBTCUSDT,
+			startTime:           tp("2020-01-02 00:01:10"),
 			candlestickProvider: newTestCandlestickProvider([]testCandlestickProviderResponse{
 				{candlesticks: []common.Candlestick{
 					{Timestamp: tInt("2020-01-04 00:00:00"), OpenPrice: 1234, HighestPrice: 1234, LowestPrice: 1234, ClosePrice: 1234},
@@ -206,14 +206,14 @@ func TestIterator(t *testing.T) {
 			timeNowFunc:                      func() time.Time { return tp("2020-01-05 00:00:00") },
 			startFromNext:                    false,
 			errCreatingIterator:              nil,
-			expectedCandlestickProviderCalls: []call{{marketSource: msBTCUSDT, startTimeTs: tInt("2020-01-03 00:00:00")}},
+			expectedCandlestickProviderCalls: []call{{marketSource: msBTCUSDT, startTime: tp("2020-01-03 00:00:00")}},
 			expectedCallResponses:            []response{{tick: common.Tick{}, err: common.ErrExchangeReturnedOutOfSyncTick}},
 		},
 		{
-			name:            "Daily: Succeeds to request one tick",
-			intervalMinutes: 60 * 24,
-			marketSource:    msBTCUSDT,
-			startTime:       tp("2020-01-03 00:00:00"),
+			name:                "Daily: Succeeds to request one tick",
+			candlestickInterval: 24 * time.Hour,
+			marketSource:        msBTCUSDT,
+			startTime:           tp("2020-01-03 00:00:00"),
 			candlestickProvider: newTestCandlestickProvider([]testCandlestickProviderResponse{
 				{candlesticks: []common.Candlestick{
 					{Timestamp: tInt("2020-01-03 00:00:00"), OpenPrice: 1234, HighestPrice: 1234, LowestPrice: 1234, ClosePrice: 1234}}, err: nil},
@@ -221,15 +221,15 @@ func TestIterator(t *testing.T) {
 			timeNowFunc:                      func() time.Time { return tp("2020-01-04 00:00:00") },
 			startFromNext:                    false,
 			errCreatingIterator:              nil,
-			expectedCandlestickProviderCalls: []call{{marketSource: msBTCUSDT, startTimeTs: tInt("2020-01-03 00:00:00")}},
+			expectedCandlestickProviderCalls: []call{{marketSource: msBTCUSDT, startTime: tp("2020-01-03 00:00:00")}},
 			expectedCallResponses: []response{
 				{tick: common.Tick{Timestamp: tInt("2020-01-03 00:00:00"), Value: 1234}, err: nil}},
 		},
 		{
-			name:            "Daily: Succeeds to request two ticks, making only one request",
-			intervalMinutes: 60 * 24,
-			marketSource:    msBTCUSDT,
-			startTime:       tp("2020-01-02 00:01:10"),
+			name:                "Daily: Succeeds to request two ticks, making only one request",
+			candlestickInterval: 24 * time.Hour,
+			marketSource:        msBTCUSDT,
+			startTime:           tp("2020-01-02 00:01:10"),
 			candlestickProvider: newTestCandlestickProvider([]testCandlestickProviderResponse{
 				{candlesticks: []common.Candlestick{
 					{Timestamp: tInt("2020-01-03 00:00:00"), OpenPrice: 1234, HighestPrice: 1234, LowestPrice: 1234, ClosePrice: 1234},
@@ -238,7 +238,7 @@ func TestIterator(t *testing.T) {
 			timeNowFunc:                      func() time.Time { return tp("2020-01-05 00:00:00") },
 			startFromNext:                    false,
 			errCreatingIterator:              nil,
-			expectedCandlestickProviderCalls: []call{{marketSource: msBTCUSDT, startTimeTs: tInt("2020-01-03 00:00:00")}},
+			expectedCandlestickProviderCalls: []call{{marketSource: msBTCUSDT, startTime: tp("2020-01-03 00:00:00")}},
 			expectedCallResponses: []response{
 				{tick: common.Tick{Timestamp: tInt("2020-01-03 00:00:00"), Value: 1234}, err: nil},
 				{tick: common.Tick{Timestamp: tInt("2020-01-04 00:00:00"), Value: 1235}, err: nil}},
@@ -247,7 +247,7 @@ func TestIterator(t *testing.T) {
 	for _, ts := range tss {
 		t.Run(ts.name, func(t *testing.T) {
 			cache := cache.NewMemoryCache(map[time.Duration]int{time.Minute: 128, 24 * time.Hour: 128})
-			iterator, err := NewIterator(ts.marketSource, ts.startTime, cache, ts.candlestickProvider, ts.timeNowFunc, ts.startFromNext, ts.intervalMinutes)
+			iterator, err := NewIterator(ts.marketSource, ts.startTime, ts.candlestickInterval, cache, ts.candlestickProvider, WithTimeNowFunc(ts.timeNowFunc), WithStartFromNext(ts.startFromNext))
 			if err == nil && ts.errCreatingIterator != nil {
 				t.Logf("expected error '%v' but had no error", ts.errCreatingIterator)
 				t.FailNow()
@@ -262,7 +262,8 @@ func TestIterator(t *testing.T) {
 			}
 
 			for _, expectedResp := range ts.expectedCallResponses {
-				actualTick, actualErr := iterator.NextTick()
+				actualCandlestick, actualErr := iterator.Next()
+				actualTick := actualCandlestick.ToTick()
 				if actualErr != nil && expectedResp.err == nil {
 					t.Logf("expected no error but had '%v'", actualErr)
 					t.FailNow()
@@ -307,22 +308,24 @@ func TestTickIteratorUsesCache(t *testing.T) {
 	it1, _ := NewIterator(
 		msBTCUSDT,
 		tp("2020-01-02 00:00:00"),
+		time.Minute,
 		cache,
 		testCandlestickProvider1,
-		func() time.Time { return tp("2022-01-03 00:00:00") },
-		false,
-		1,
+		WithTimeNowFunc(func() time.Time { return tp("2022-01-03 00:00:00") }),
 	)
-	tick, err := it1.NextTick()
+	cs, err := it1.Next()
+	tick := cs.ToTick()
 	require.Nil(t, err)
 	require.Equal(t, tick, tick1)
-	tick, err = it1.NextTick()
+	cs, err = it1.Next()
+	tick = cs.ToTick()
 	require.Nil(t, err)
 	require.Equal(t, tick, tick2)
-	tick, err = it1.NextTick()
+	cs, err = it1.Next()
+	tick = cs.ToTick()
 	require.Nil(t, err)
 	require.Equal(t, tick, tick3)
-	_, err = it1.NextTick()
+	_, err = it1.Next()
 	require.Equal(t, common.ErrOutOfCandlesticks, err)
 
 	require.Len(t, testCandlestickProvider1.calls, 2)
@@ -331,22 +334,24 @@ func TestTickIteratorUsesCache(t *testing.T) {
 	it2, _ := NewIterator(
 		msBTCUSDT,
 		tp("2020-01-02 00:00:00"),
+		time.Minute,
 		cache, // Reusing cache, so cache should kick in and prevent testCandlestickProvider2 from being called
 		testCandlestickProvider2,
-		func() time.Time { return tp("2022-01-03 00:00:00") },
-		false,
-		1,
+		WithTimeNowFunc(func() time.Time { return tp("2022-01-03 00:00:00") }),
 	)
-	tick, err = it2.NextTick()
+	cs, err = it2.Next()
+	tick = cs.ToTick()
 	require.Nil(t, err)
 	require.Equal(t, tick, tick1)
-	tick, err = it2.NextTick()
+	cs, err = it2.Next()
+	tick = cs.ToTick()
 	require.Nil(t, err)
 	require.Equal(t, tick, tick2)
-	tick, err = it2.NextTick()
+	cs, err = it2.Next()
+	tick = cs.ToTick()
 	require.Nil(t, err)
 	require.Equal(t, tick, tick3)
-	_, err = it2.NextTick()
+	_, err = it2.Next()
 	require.Equal(t, common.ErrOutOfCandlesticks, err)
 
 	require.Len(t, testCandlestickProvider2.calls, 1) // Cache was used!! Only last call after cache consumed.
@@ -364,7 +369,7 @@ type testCandlestickProviderResponse struct {
 
 type call struct {
 	marketSource common.MarketSource
-	startTimeTs  int
+	startTime    time.Time
 }
 
 type testCandlestickProvider struct {
@@ -376,17 +381,18 @@ func newTestCandlestickProvider(responses []testCandlestickProviderResponse) *te
 	return &testCandlestickProvider{responses: responses}
 }
 
-func (p *testCandlestickProvider) RequestCandlesticks(marketSource common.MarketSource, startTimeTs, intervalMinutes int) ([]common.Candlestick, error) {
+func (p *testCandlestickProvider) RequestCandlesticks(marketSource common.MarketSource, startTime time.Time, candlestickInterval time.Duration) ([]common.Candlestick, error) {
 	resp := p.responses[len(p.calls)]
-	p.calls = append(p.calls, call{marketSource: marketSource, startTimeTs: startTimeTs})
+	p.calls = append(p.calls, call{marketSource: marketSource, startTime: startTime.UTC()})
 	return resp.candlesticks, resp.err
 }
 
-func (p *testCandlestickProvider) GetPatience() time.Duration { return 0 * time.Second }
+func (p *testCandlestickProvider) Patience() time.Duration { return 0 * time.Second }
+func (p *testCandlestickProvider) Name() string            { return "TEST" }
 
 func tp(s string) time.Time {
 	t, _ := time.Parse("2006-01-02 15:04:05", s)
-	return t
+	return t.UTC()
 }
 
 func tInt(s string) int {

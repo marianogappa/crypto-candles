@@ -85,53 +85,52 @@ func responseToCandlesticks(data [][]string) ([]common.Candlestick, error) {
 			ClosePrice:   common.JSONFloat64(candlestick.Close),
 			LowestPrice:  common.JSONFloat64(candlestick.Low),
 			HighestPrice: common.JSONFloat64(candlestick.High),
-			Volume:       common.JSONFloat64(candlestick.Volume),
 		}
 	}
 
 	return candlesticks, nil
 }
 
-func (e *Kucoin) requestCandlesticks(baseAsset string, quoteAsset string, startTimeSecs int, intervalMinutes int) ([]common.Candlestick, error) {
+func (e *Kucoin) requestCandlesticks(baseAsset string, quoteAsset string, startTime time.Time, candlestickInterval time.Duration) ([]common.Candlestick, error) {
 	req, _ := http.NewRequest("GET", fmt.Sprintf("%vmarket/candles", e.apiURL), nil)
 	symbol := fmt.Sprintf("%v-%v", strings.ToUpper(baseAsset), strings.ToUpper(quoteAsset))
 
 	q := req.URL.Query()
 	q.Add("symbol", symbol)
 
-	switch intervalMinutes {
-	case 1:
+	switch candlestickInterval {
+	case 1 * time.Minute:
 		q.Add("type", "1min")
-	case 3:
+	case 3 * time.Minute:
 		q.Add("type", "3min")
-	case 5:
+	case 5 * time.Minute:
 		q.Add("type", "5min")
-	case 15:
+	case 15 * time.Minute:
 		q.Add("type", "15min")
-	case 30:
+	case 30 * time.Minute:
 		q.Add("type", "30min")
-	case 1 * 60:
+	case 1 * 60 * time.Minute:
 		q.Add("type", "1hour")
-	case 2 * 60:
+	case 2 * 60 * time.Minute:
 		q.Add("type", "2hour")
-	case 4 * 60:
+	case 4 * 60 * time.Minute:
 		q.Add("type", "4hour")
-	case 6 * 60:
+	case 6 * 60 * time.Minute:
 		q.Add("type", "6hour")
-	case 8 * 60:
+	case 8 * 60 * time.Minute:
 		q.Add("type", "8hour")
-	case 12 * 60:
+	case 12 * 60 * time.Minute:
 		q.Add("type", "12hour")
-	case 1 * 60 * 24:
+	case 1 * 60 * 24 * time.Minute:
 		q.Add("type", "1day")
-	case 7 * 60 * 24:
+	case 7 * 60 * 24 * time.Minute:
 		q.Add("type", "1week")
 	default:
 		return nil, common.CandleReqError{IsNotRetryable: true, Err: common.ErrUnsupportedCandlestickInterval}
 	}
 
-	q.Add("startAt", fmt.Sprintf("%v", startTimeSecs))
-	q.Add("endAt", fmt.Sprintf("%v", startTimeSecs+1500*60))
+	q.Add("startAt", fmt.Sprintf("%v", int(startTime.Unix())))
+	q.Add("endAt", fmt.Sprintf("%v", int(startTime.Unix())+1500*int(candlestickInterval/time.Second)))
 
 	req.URL.RawQuery = q.Encode()
 

@@ -101,16 +101,16 @@ func (r response) toError() error {
 	return errors.New(strings.Join(ss, ", "))
 }
 
-func (e *Bitstamp) requestCandlesticks(baseAsset string, quoteAsset string, startTimeSecs int, intervalMinutes int) ([]common.Candlestick, error) {
+func (e *Bitstamp) requestCandlesticks(baseAsset string, quoteAsset string, startTime time.Time, candlestickInterval time.Duration) ([]common.Candlestick, error) {
 	req, _ := http.NewRequest("GET", fmt.Sprintf("%vohlc/%v%v/", e.apiURL, strings.ToLower(baseAsset), strings.ToLower(quoteAsset)), nil)
 
 	// Bitstamp has the unusual strategy of returning the snapped timestamp to the past rather than the future, so
 	// for this particular case it's important to do the snap to the future before making the request.
-	startTimeSecs = common.NormalizeTimestamp(time.Unix(int64(startTimeSecs), 0), time.Duration(intervalMinutes)*time.Minute, "BITSTAMP", false)
+	startTimeSecs := common.NormalizeTimestamp(startTime, candlestickInterval, "BITSTAMP", false)
 
 	q := req.URL.Query()
 	q.Add("start", fmt.Sprintf("%v", startTimeSecs))
-	q.Add("step", fmt.Sprintf("%v", intervalMinutes*60))
+	q.Add("step", fmt.Sprintf("%v", int(candlestickInterval/time.Second)))
 	q.Add("limit", "1000")
 
 	req.URL.RawQuery = q.Encode()

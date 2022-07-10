@@ -30,35 +30,38 @@ func NewFTX() *FTX {
 	return e
 }
 
-// RequestCandlesticks requests candlesticks for the given market pair, of candlestick interval "intervalMinutes",
-// starting at "startTimeTs".
+// RequestCandlesticks requests candlesticks for the given market source, of a given candlestick interval,
+// starting at a given time.Time.
 //
-// The supplied "intervalMinutes" may not be supported by this exchange.
+// The supplied candlestick interval may not be supported by this exchange.
 //
-// Candlesticks will start at the next multiple of "startTimeTs" as defined by
-// time.Truncate(intervalMinutes * time.Minute)), except in some documented exceptions.
-// This is enforced by the exchange.
+// Candlesticks will start at the next multiple of startTime as defined by
+// time.Truncate(candlestickInterval), except in some documented exceptions.
 //
 // Some exchanges return candlesticks with gaps, but this method will patch the gaps by cloning the candlestick
 // received right before the gap as many times as gaps, or the first candlestick if the gaps is at the start.
 //
 // Most of the usage of this method is with 1 minute intervals, the interval used to follow predictions.
-func (e *FTX) RequestCandlesticks(marketSource common.MarketSource, startTimeTs int, intervalMinutes int) ([]common.Candlestick, error) {
+func (e *FTX) RequestCandlesticks(marketSource common.MarketSource, startTime time.Time, candlestickInterval time.Duration) ([]common.Candlestick, error) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	candlesticks, err := e.requestCandlesticks(marketSource.BaseAsset, marketSource.QuoteAsset, startTimeTs, intervalMinutes)
+	candlesticks, err := e.requestCandlesticks(marketSource.BaseAsset, marketSource.QuoteAsset, startTime, candlestickInterval)
 	if err != nil {
 		return nil, err
 	}
-	return common.PatchCandlestickHoles(candlesticks, startTimeTs, 60*intervalMinutes), nil
+
+	return common.PatchCandlestickHoles(candlesticks, int(startTime.Unix()), int(candlestickInterval/time.Second)), nil
 }
 
-// GetPatience returns the delay that this exchange usually takes in order for it to return candlesticks.
+// Patience returns the delay that this exchange usually takes in order for it to return candlesticks.
 //
 // Some exchanges may return results for unfinished candles (e.g. the current minute) and some may not, so callers
 // should not request unfinished candles. This patience should be taken into account in addition to unfinished candles.
-func (e *FTX) GetPatience() time.Duration { return 0 * time.Second }
+func (e *FTX) Patience() time.Duration { return 0 * time.Second }
+
+// Name is the name of this candlestick provider.
+func (e *FTX) Name() string { return common.FTX }
 
 // SetDebug sets exchange-wide debug logging. It's useful to know how many times requests are being sent to exchanges.
 func (e *FTX) SetDebug(debug bool) {

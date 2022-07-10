@@ -10,17 +10,19 @@ import (
 
 const (
 	// BINANCE is an enumesque string value representing the BINANCE exchange
-	BINANCE = "binance"
+	BINANCE = "BINANCE"
 	// FTX is an enumesque string value representing the FTX exchange
-	FTX = "ftx"
+	FTX = "FTX"
 	// COINBASE is an enumesque string value representing the COINBASE exchange
-	COINBASE = "coinbase"
+	COINBASE = "COINBASE"
 	// KUCOIN is an enumesque string value representing the KUCOIN exchange
-	KUCOIN = "kucoin"
+	KUCOIN = "KUCOIN"
 	// BINANCEUSDMFUTURES is an enumesque string value representing the BINANCEUSDMFUTURES exchange
-	BINANCEUSDMFUTURES = "binanceusdmfutures"
+	BINANCEUSDMFUTURES = "BINANCEUSDMFUTURES"
 	// BITSTAMP is an enumesque string value representing the BITSTAMP exchange
-	BITSTAMP = "bitstamp"
+	BITSTAMP = "BITSTAMP"
+	// BITFINEX is an enumesque string value representing the BITFINEX exchange
+	BITFINEX = "BITFINEX"
 )
 
 var (
@@ -60,12 +62,15 @@ type CandlestickProvider interface {
 	//
 	// * Fails with ErrInvalidMarketPair if the marketSource's marketPair / asset does not exist at the exchange. In some
 	//   cases, an exchange may not have data for a marketPair / asset and still not explicitly return an error.
-	RequestCandlesticks(marketSource MarketSource, startTimeTs, intervalMinutes int) ([]Candlestick, error)
+	RequestCandlesticks(marketSource MarketSource, startTime time.Time, candlestickInterval time.Duration) ([]Candlestick, error)
 
-	// GetPatience documents the recommended latency a client should observe for requesting the latest candlesticks
+	// Patience documents the recommended latency a client should observe for requesting the latest candlesticks
 	// for a given market pair. Clients may ignore it, but are more likely to have to deal with empty results, errors
 	// and rate limiting.
-	GetPatience() time.Duration
+	Patience() time.Duration
+
+	// Name is the uppercase name of the candlestick provider e.g. BINANCE
+	Name() string
 }
 
 // CandleReqError is an error arising from a call to requestCandlesticks
@@ -95,12 +100,6 @@ type Candlestick struct {
 
 	// HighestPrice is the highest price reached during the candlestick duration.
 	HighestPrice JSONFloat64 `json:"h"`
-
-	// Volume is the traded volume in base asset during this candlestick.
-	Volume JSONFloat64 `json:"v"`
-
-	// NumberOfTrades is the total number of filled order book orders in this candlestick.
-	NumberOfTrades int `json:"n,omitempty"`
 }
 
 // ToTicks converts a Candlestick to two Ticks. Lowest value is put first, because since there's no way to tell
@@ -112,16 +111,15 @@ func (c Candlestick) ToTicks() []Tick {
 	}
 }
 
+// ToTick converts a Candlestick to a Tick.
+func (c Candlestick) ToTick() Tick {
+	return Tick{Timestamp: c.Timestamp, Value: c.ClosePrice}
+}
+
 // Tick is the closePrice & timestamp of a Candlestick.
 type Tick struct {
 	Timestamp int         `json:"t"`
 	Value     JSONFloat64 `json:"v"`
-}
-
-// Iterator is the interface for a CandlestickIterator. It allows to iterate over both Ticks & Candlesticks.
-type Iterator interface {
-	NextTick() (Tick, error)
-	NextCandlestick() (Candlestick, error)
 }
 
 // JSONFloat64 exists only for the purpose of marshalling floats in a nicer way.
@@ -206,6 +204,12 @@ func (t ISO8601) Millis() (int, error) {
 }
 
 var (
+	// ErrInvalidMarketType means: invalid market type
+	ErrInvalidMarketType = errors.New("invalid market type")
+
+	// ErrUnsuportedCandlestickProvider means: unsupported candlestick provider
+	ErrUnsuportedCandlestickProvider = errors.New("unsupported candlestick provider")
+
 	// ErrOutOfTicks means: out of ticks
 	ErrOutOfTicks = errors.New("out of ticks")
 

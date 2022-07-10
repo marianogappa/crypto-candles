@@ -28,13 +28,11 @@ func TestHappyToCandlesticks(t *testing.T) {
 		t.Fatalf("Should have converted 1 candlesticks but converted: %v", len(cs))
 	}
 	expected := common.Candlestick{
-		Timestamp:      1566789720,
-		OpenPrice:      f(10411.5),
-		ClosePrice:     f(10401.9),
-		LowestPrice:    f(10396.3),
-		HighestPrice:   f(10411.5),
-		Volume:         f(29.11357276),
-		NumberOfTrades: 0,
+		Timestamp:    1566789720,
+		OpenPrice:    f(10411.5),
+		ClosePrice:   f(10401.9),
+		LowestPrice:  f(10396.3),
+		HighestPrice: f(10411.5),
 	}
 	if cs[0] != expected {
 		t.Fatalf("Candlestick should have been %v but was %v", expected, cs[0])
@@ -92,7 +90,7 @@ func TestKlinesInvalidUrl(t *testing.T) {
 	b.requester.Strategy = common.RetryStrategy{Attempts: 1}
 	b.apiURL = "invalid url"
 
-	_, err := b.RequestCandlesticks(msBTCUSDT, tInt("2021-07-04T14:14:18+00:00"), 1)
+	_, err := b.RequestCandlesticks(msBTCUSDT, tp("2021-07-04T14:14:18+00:00"), time.Minute)
 	if err == nil {
 		t.Fatalf("should have failed due to invalid url")
 	}
@@ -108,7 +106,7 @@ func TestKlinesErrReadingResponseBody(t *testing.T) {
 	b.requester.Strategy = common.RetryStrategy{Attempts: 1}
 	b.apiURL = ts.URL + "/"
 
-	_, err := b.RequestCandlesticks(msBTCUSDT, tInt("2021-07-04T14:14:18+00:00"), 1)
+	_, err := b.RequestCandlesticks(msBTCUSDT, tp("2021-07-04T14:14:18+00:00"), time.Minute)
 	if err == nil {
 		t.Fatalf("should have failed due to invalid response body")
 	}
@@ -124,7 +122,7 @@ func TestKlinesErrorResponse(t *testing.T) {
 	b.requester.Strategy = common.RetryStrategy{Attempts: 1}
 	b.apiURL = ts.URL + "/"
 
-	_, err := b.RequestCandlesticks(msBTCUSDT, tInt("2021-07-04T14:14:18+00:00"), 1)
+	_, err := b.RequestCandlesticks(msBTCUSDT, tp("2021-07-04T14:14:18+00:00"), time.Minute)
 	if err == nil {
 		t.Fatalf("should have failed due to error response")
 	}
@@ -140,7 +138,7 @@ func TestKlinesNon200Response(t *testing.T) {
 	b.requester.Strategy = common.RetryStrategy{Attempts: 1}
 	b.apiURL = ts.URL + "/"
 
-	_, err := b.RequestCandlesticks(msBTCUSDT, tInt("2021-07-04T14:14:18+00:00"), 1)
+	_, err := b.RequestCandlesticks(msBTCUSDT, tp("2021-07-04T14:14:18+00:00"), time.Minute)
 	if err == nil {
 		t.Fatalf("should have failed due to 500 response")
 	}
@@ -156,7 +154,7 @@ func TestKlinesInvalidJSONResponse(t *testing.T) {
 	b.requester.Strategy = common.RetryStrategy{Attempts: 1}
 	b.apiURL = ts.URL + "/"
 
-	_, err := b.RequestCandlesticks(msBTCUSDT, tInt("2021-07-04T14:14:18+00:00"), 1)
+	_, err := b.RequestCandlesticks(msBTCUSDT, tp("2021-07-04T14:14:18+00:00"), time.Minute)
 	if err == nil {
 		t.Fatalf("should have failed due to invalid json")
 	}
@@ -172,7 +170,7 @@ func TestKlinesInvalidFloatsInJSONResponse(t *testing.T) {
 	b.requester.Strategy = common.RetryStrategy{Attempts: 1}
 	b.apiURL = ts.URL + "/"
 
-	_, err := b.RequestCandlesticks(msBTCUSDT, tInt("2021-07-04T14:14:18+00:00"), 1)
+	_, err := b.RequestCandlesticks(msBTCUSDT, tp("2021-07-04T14:14:18+00:00"), time.Minute)
 	if err == nil {
 		t.Fatalf("should have failed due to invalid floats in json")
 	}

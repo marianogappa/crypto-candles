@@ -185,61 +185,59 @@ type binanceCandlestick struct {
 
 func (c binanceCandlestick) toCandlestick() common.Candlestick {
 	return common.Candlestick{
-		Timestamp:      int(c.openAt.Unix()),
-		OpenPrice:      common.JSONFloat64(c.openPrice),
-		ClosePrice:     common.JSONFloat64(c.closePrice),
-		LowestPrice:    common.JSONFloat64(c.lowPrice),
-		HighestPrice:   common.JSONFloat64(c.highPrice),
-		Volume:         common.JSONFloat64(c.volume),
-		NumberOfTrades: c.tradeCount,
+		Timestamp:    int(c.openAt.Unix()),
+		OpenPrice:    common.JSONFloat64(c.openPrice),
+		ClosePrice:   common.JSONFloat64(c.closePrice),
+		LowestPrice:  common.JSONFloat64(c.lowPrice),
+		HighestPrice: common.JSONFloat64(c.highPrice),
 	}
 }
 
-func (e *BinanceUSDMFutures) requestCandlesticks(baseAsset string, quoteAsset string, startTimeTs int, intervalMinutes int) ([]common.Candlestick, error) {
+func (e *BinanceUSDMFutures) requestCandlesticks(baseAsset string, quoteAsset string, startTime time.Time, candlestickInterval time.Duration) ([]common.Candlestick, error) {
 	req, _ := http.NewRequest("GET", fmt.Sprintf("%vklines", e.apiURL), nil)
 	symbol := fmt.Sprintf("%v%v", strings.ToUpper(baseAsset), strings.ToUpper(quoteAsset))
 
 	q := req.URL.Query()
 	q.Add("symbol", symbol)
 
-	switch intervalMinutes {
-	case 1:
+	switch candlestickInterval {
+	case 1 * time.Minute:
 		q.Add("interval", "1m")
-	case 3:
+	case 3 * time.Minute:
 		q.Add("interval", "3m")
-	case 5:
+	case 5 * time.Minute:
 		q.Add("interval", "5m")
-	case 15:
+	case 15 * time.Minute:
 		q.Add("interval", "15m")
-	case 30:
+	case 30 * time.Minute:
 		q.Add("interval", "30m")
-	case 1 * 60:
+	case 1 * 60 * time.Minute:
 		q.Add("interval", "1h")
-	case 2 * 60:
+	case 2 * 60 * time.Minute:
 		q.Add("interval", "2h")
-	case 4 * 60:
+	case 4 * 60 * time.Minute:
 		q.Add("interval", "4h")
-	case 6 * 60:
+	case 6 * 60 * time.Minute:
 		q.Add("interval", "6h")
-	case 8 * 60:
+	case 8 * 60 * time.Minute:
 		q.Add("interval", "8h")
-	case 12 * 60:
+	case 12 * 60 * time.Minute:
 		q.Add("interval", "12h")
-	case 1 * 60 * 24:
+	case 1 * 60 * 24 * time.Minute:
 		q.Add("interval", "1d")
-	case 3 * 60 * 24:
+	case 3 * 60 * 24 * time.Minute:
 		q.Add("interval", "3d")
-	case 7 * 60 * 24:
+	case 7 * 60 * 24 * time.Minute:
 		q.Add("interval", "1w")
 	// TODO This one is problematic because cannot patch holes or do other calculations (because months can have 28, 29, 30 & 31 days)
-	case 30 * 60 * 24:
+	case 30 * 60 * 24 * time.Minute:
 		q.Add("interval", "1M")
 	default:
 		return nil, common.CandleReqError{IsNotRetryable: true, Err: common.ErrUnsupportedCandlestickInterval}
 	}
 
 	q.Add("limit", "1000")
-	q.Add("startTime", fmt.Sprintf("%v", startTimeTs*1000))
+	q.Add("startTime", fmt.Sprintf("%v", startTime.Unix()*1000))
 
 	req.URL.RawQuery = q.Encode()
 

@@ -17,13 +17,13 @@ type RetryStrategy struct {
 
 // RequesterWithRetry runs an exchange's candlestick request, with a supplied retry strategy.
 type RequesterWithRetry struct {
-	fn       func(string, string, int, int) ([]Candlestick, error)
+	fn       func(string, string, time.Time, time.Duration) ([]Candlestick, error)
 	Strategy RetryStrategy
 	debug    *bool
 }
 
 // NewRequesterWithRetry constructs a RequesterWithRetry
-func NewRequesterWithRetry(fn func(string, string, int, int) ([]Candlestick, error), strategy RetryStrategy, debug *bool) RequesterWithRetry {
+func NewRequesterWithRetry(fn func(string, string, time.Time, time.Duration) ([]Candlestick, error), strategy RetryStrategy, debug *bool) RequesterWithRetry {
 	if strategy.Attempts == 0 {
 		strategy.Attempts = 3
 	}
@@ -37,7 +37,7 @@ func NewRequesterWithRetry(fn func(string, string, int, int) ([]Candlestick, err
 }
 
 // Request runs an exchange's candlestick request, with a supplied retry strategy.
-func (r RequesterWithRetry) Request(baseAsset string, quoteAsset string, startTimeTs int, intervalMinutes int) ([]Candlestick, error) {
+func (r RequesterWithRetry) Request(baseAsset string, quoteAsset string, startTime time.Time, candlestickInterval time.Duration) ([]Candlestick, error) {
 	var (
 		err          error
 		candlesticks []Candlestick
@@ -45,7 +45,7 @@ func (r RequesterWithRetry) Request(baseAsset string, quoteAsset string, startTi
 		attempts     = r.Strategy.Attempts
 	)
 	for attempts > 0 {
-		if candlesticks, err = r.fn(baseAsset, quoteAsset, startTimeTs, intervalMinutes); err == nil {
+		if candlesticks, err = r.fn(baseAsset, quoteAsset, startTime, candlestickInterval); err == nil {
 			return candlesticks, nil
 		}
 		candleReqErr := err.(CandleReqError)

@@ -44,10 +44,6 @@ func coinbaseToCandlesticks(response successResponse) ([]common.Candlestick, err
 		if !ok {
 			return candlesticks, fmt.Errorf("candlestick %v had closePrice = %v! Invalid syntax from Coinbase", i, closePrice)
 		}
-		volume, ok := raw[5].(float64)
-		if !ok {
-			return candlesticks, fmt.Errorf("candlestick %v had volume = %v! Invalid syntax from Coinbase", i, volume)
-		}
 
 		candlestick := common.Candlestick{
 			Timestamp:    timestamp,
@@ -55,7 +51,6 @@ func coinbaseToCandlesticks(response successResponse) ([]common.Candlestick, err
 			HighestPrice: common.JSONFloat64(highestPrice),
 			OpenPrice:    common.JSONFloat64(openPrice),
 			ClosePrice:   common.JSONFloat64(closePrice),
-			Volume:       common.JSONFloat64(volume),
 		}
 		candlesticks[i] = candlestick
 	}
@@ -63,12 +58,12 @@ func coinbaseToCandlesticks(response successResponse) ([]common.Candlestick, err
 	return candlesticks, nil
 }
 
-func (e *Coinbase) requestCandlesticks(baseAsset string, quoteAsset string, startTimeTs int, intervalMinutes int) ([]common.Candlestick, error) {
+func (e *Coinbase) requestCandlesticks(baseAsset string, quoteAsset string, startTime time.Time, candlestickInterval time.Duration) ([]common.Candlestick, error) {
 	req, _ := http.NewRequest("GET", fmt.Sprintf("%vproducts/%v-%v/candles", e.apiURL, strings.ToUpper(baseAsset), strings.ToUpper(quoteAsset)), nil)
 
 	q := req.URL.Query()
 
-	granularity := intervalMinutes * 60
+	granularity := int(candlestickInterval / time.Second)
 
 	validGranularities := map[int]bool{
 		60:    true,
@@ -84,9 +79,8 @@ func (e *Coinbase) requestCandlesticks(baseAsset string, quoteAsset string, star
 
 	q.Add("granularity", fmt.Sprintf("%v", granularity))
 
-	startTimeTm := time.Unix(int64(startTimeTs), 0)
-	startTimeISO8601 := startTimeTm.Format(time.RFC3339)
-	endTimeISO8601 := startTimeTm.Add(299 * 60 * time.Second).Format(time.RFC3339)
+	startTimeISO8601 := startTime.Format(time.RFC3339)
+	endTimeISO8601 := startTime.Add(299 * 60 * time.Second).Format(time.RFC3339)
 
 	q.Add("start", fmt.Sprintf("%v", startTimeISO8601))
 	q.Add("end", fmt.Sprintf("%v", endTimeISO8601))

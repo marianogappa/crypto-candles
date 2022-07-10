@@ -107,33 +107,33 @@ func (e responseError) toCandleReqError() (common.CandleReqError, bool) {
 	return err, true
 }
 
-func (e *Bitfinex) requestCandlesticks(baseAsset string, quoteAsset string, startTimeSecs int, intervalMinutes int) ([]common.Candlestick, error) {
+func (e *Bitfinex) requestCandlesticks(baseAsset string, quoteAsset string, startTime time.Time, candlestickInterval time.Duration) ([]common.Candlestick, error) {
 
 	timeframe := ""
-	switch intervalMinutes {
-	case 1:
+	switch candlestickInterval {
+	case 1 * time.Minute:
 		timeframe = "1m"
-	case 5:
+	case 5 * time.Minute:
 		timeframe = "5m"
-	case 15:
+	case 15 * time.Minute:
 		timeframe = "15m"
-	case 30:
+	case 30 * time.Minute:
 		timeframe = "30m"
-	case 1 * 60:
+	case 1 * 60 * time.Minute:
 		timeframe = "1h"
-	case 3 * 60:
+	case 3 * 60 * time.Minute:
 		timeframe = "3h"
-	case 6 * 60:
+	case 6 * 60 * time.Minute:
 		timeframe = "6h"
-	case 12 * 60:
+	case 12 * 60 * time.Minute:
 		timeframe = "12h"
-	case 1 * 60 * 24:
+	case 1 * 60 * 24 * time.Minute:
 		timeframe = "1D"
-	case 7 * 60 * 24:
+	case 7 * 60 * 24 * time.Minute:
 		timeframe = "1W"
-	case 14 * 60 * 24:
+	case 14 * 60 * 24 * time.Minute:
 		timeframe = "14D"
-	case 30 * 60 * 24:
+	case 30 * 60 * 24 * time.Minute:
 		timeframe = "1M"
 	default:
 		return nil, common.CandleReqError{IsNotRetryable: true, Err: common.ErrUnsupportedCandlestickInterval}
@@ -143,7 +143,7 @@ func (e *Bitfinex) requestCandlesticks(baseAsset string, quoteAsset string, star
 
 	// Some exchanges have the unusual strategy of returning the snapped timestamp to the past rather than the future,
 	// so it's important to do the snap to the future before making the request, to not depend on the echange doing so.
-	startTimeSecs = common.NormalizeTimestamp(time.Unix(int64(startTimeSecs), 0), time.Duration(intervalMinutes)*time.Minute, "BITFINEX", false)
+	startTimeSecs := common.NormalizeTimestamp(startTime, candlestickInterval, "BITFINEX", false)
 
 	q := req.URL.Query()
 	q.Add("start", fmt.Sprintf("%v", startTimeSecs*1000))

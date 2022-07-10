@@ -1,3 +1,24 @@
+// iterator provides a candlestick Iterator.
+//
+// You can use it like this:
+//
+// for {
+//   candlestick, err := iter.Next()
+//   if err != nil {
+//     return err
+//   }
+//   ... use candlestick ...
+// }
+//
+// It also implements the Scanner interface, so you can also use it like this:
+//
+// var candlestick common.Candlestick
+// for iter.Scan(&candlestick) {
+//   ... use candlestick ...
+// }
+// if iter.Error != nil {
+//   return err
+// }
 package iterator
 
 import (
@@ -9,53 +30,69 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Iterator is the interface for iterating over candlesticks. It implements the Iterator and Scanner interfaces.
+type Iterator interface {
+	Next() (common.Candlestick, error)
+
+	Scan(*common.Candlestick) bool
+	Error() error
+}
+
 // Impl is the struct for the market Iterator.
 type Impl struct {
 	marketSource        common.MarketSource
-	candlesticks        []common.Candlestick
-	lastTs              int
 	candlestickCache    *cache.MemoryCache
 	candlestickProvider common.CandlestickProvider
-	timeNowFunc         func() time.Time
-	intervalMinutes     int
+	candlestickInterval time.Duration
+	candlesticks        []common.Candlestick
 	metric              cache.Metric
+	timeNowFunc         func() time.Time
+	startFromNext       bool
+	lastTs              int
+	lastErr             error
 }
 
 // NewIterator constructs a market Iterator.
-func NewIterator(marketSource common.MarketSource, startTime time.Time, candlestickCache *cache.MemoryCache, candlestickProvider common.CandlestickProvider, timeNowFunc func() time.Time, startFromNext bool, intervalMinutes int) (*Impl, error) {
-	startTs := common.NormalizeTimestamp(startTime, time.Duration(intervalMinutes)*time.Minute, "TODO_PROVIDER", startFromNext)
-	metric := cache.Metric{Name: marketSource.String(), CandlestickInterval: time.Duration(intervalMinutes) * time.Minute}
-
-	return &Impl{
+func NewIterator(marketSource common.MarketSource, startTime time.Time, candlestickInterval time.Duration, candlestickCache *cache.MemoryCache, candlestickProvider common.CandlestickProvider, options ...func(*Impl)) (*Impl, error) {
+	iter := Impl{
 		marketSource:        marketSource,
 		candlestickCache:    candlestickCache,
 		candlestickProvider: candlestickProvider,
 		candlesticks:        []common.Candlestick{},
-		timeNowFunc:         timeNowFunc,
-		lastTs:              startTs - intervalMinutes*60,
-		intervalMinutes:     intervalMinutes,
-		metric:              metric,
-	}, nil
-}
-
-// NextTick is the "Next" iterator function, providing the next available Tick (as opposed to Candlestick).
-//
-// It can fail for many reasons because it depends on requesting to an exchange, which means it could fail if the
-// Internet cable got mauled by a cat.
-//
-// Some common failure reasons:
-//
-// - ErrNoNewTicksYet: timestamp is already in the present.
-// - ErrExchangeReturnedNoTicks: exchange got the request and returned no results.
-func (t *Impl) NextTick() (common.Tick, error) {
-	cs, err := t.NextCandlestick()
-	if err != nil {
-		return common.Tick{}, err
+		candlestickInterval: candlestickInterval,
+		metric:              cache.Metric{Name: marketSource.String(), CandlestickInterval: candlestickInterval},
 	}
-	return common.Tick{Timestamp: cs.Timestamp, Value: cs.ClosePrice}, nil
+	for _, option := range options {
+		option(&iter)
+	}
+	if iter.timeNowFunc == nil {
+		iter.timeNowFunc = time.Now
+	}
+
+	startTs := common.NormalizeTimestamp(startTime, candlestickInterval, candlestickProvider.Name(), iter.startFromNext)
+	iter.lastTs = startTs - int(candlestickInterval/time.Second)
+
+	return &iter, nil
 }
 
-// NextCandlestick is the "Next" iterator function, providing the next available Candlestick (as opposed to Tick).
+// WithTimeNowFunc overrides time.Now() for testing purposes. Current time is used to decide if there are no new
+// candlesticks available, because the requested time would be in the future or the recent present.
+func WithTimeNowFunc(f func() time.Time) func(*Impl) {
+	return func(impl *Impl) {
+		impl.timeNowFunc = f
+	}
+}
+
+// WithStartFromNext moves the startTime to one candlestickInterval in the future. This is useful when the caller
+// has already consumed the "startTime" candlestick and has saved this time in their state, so they want to start
+// consuming from the next time.
+func WithStartFromNext(b bool) func(*Impl) {
+	return func(impl *Impl) {
+		impl.startFromNext = b
+	}
+}
+
+// Next is the "Next" iterator function, providing the next available Candlestick (as opposed to Tick).
 //
 // It can fail for many reasons because it depends on requesting to an exchange, which means it could fail if the
 // Internet cable got mauled by a cat.
@@ -64,7 +101,7 @@ func (t *Impl) NextTick() (common.Tick, error) {
 //
 // - ErrNoNewTicksYet: timestamp is already in the present.
 // - ErrExchangeReturnedNoTicks: exchange got the request and returned no results.
-func (t *Impl) NextCandlestick() (common.Candlestick, error) {
+func (t *Impl) Next() (common.Candlestick, error) {
 	// If the candlesticks buffer is empty, try to get candlesticks from the cache.
 	if len(t.candlesticks) == 0 && t.candlestickCache != nil {
 		ticks, err := t.candlestickCache.Get(t.metric, t.nextISO8601())
@@ -82,12 +119,12 @@ func (t *Impl) NextCandlestick() (common.Candlestick, error) {
 	}
 
 	// If we reach here, before asking the exchange, let's see if it's too early to have new values.
-	if t.nextTime().After(t.timeNowFunc().Add(-t.candlestickProvider.GetPatience() - time.Duration(t.candlestickDurationSecs())*time.Second)) {
+	if t.nextTime().After(t.timeNowFunc().Add(-t.candlestickProvider.Patience() - t.candlestickInterval)) {
 		return common.Candlestick{}, common.ErrNoNewTicksYet
 	}
 
 	// If we reach here, the buffer was empty and the cache was empty too. Last chance: try the exchange.
-	candlesticks, err := t.candlestickProvider.RequestCandlesticks(t.marketSource, t.nextTs(), t.intervalMinutes)
+	candlesticks, err := t.candlestickProvider.RequestCandlesticks(t.marketSource, t.nextTime(), t.candlestickInterval)
 	if err != nil {
 		return common.Candlestick{}, err
 	}
@@ -122,6 +159,20 @@ func (t *Impl) NextCandlestick() (common.Candlestick, error) {
 	return candlestick, nil
 }
 
+// Scan is the Scanner interface implementation. Returns true if the scanning happened without errors. If it returns
+// false, the error is available on iter.Error().
+func (t *Impl) Scan(candlestick *common.Candlestick) bool {
+	cs, err := t.Next()
+	t.lastErr = err
+	*candlestick = cs
+	return err == nil
+}
+
+// Error returns the error of the last Scan operation, or nil if it was successful.
+func (t *Impl) Error() error {
+	return t.lastErr
+}
+
 func (t *Impl) nextISO8601() common.ISO8601 {
 	return common.ISO8601(t.nextTime().Format(time.RFC3339))
 }
@@ -131,11 +182,7 @@ func (t *Impl) nextTime() time.Time {
 }
 
 func (t *Impl) nextTs() int {
-	return t.lastTs + t.candlestickDurationSecs()
-}
-
-func (t *Impl) candlestickDurationSecs() int {
-	return t.intervalMinutes * 60
+	return t.lastTs + int(t.candlestickInterval/time.Second)
 }
 
 func (t *Impl) pruneOlderCandlesticks(candlesticks []common.Candlestick) []common.Candlestick {
