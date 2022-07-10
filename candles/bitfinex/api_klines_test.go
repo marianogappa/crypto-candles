@@ -325,10 +325,6 @@ func tp(s string) time.Time {
 	return t
 }
 
-func tInt(s string) int {
-	return int(tp(s).Unix())
-}
-
 var (
 	msBTCUSD = common.MarketSource{
 		Type:       common.COIN,

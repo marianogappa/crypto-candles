@@ -1,4 +1,4 @@
-// iterator provides a candlestick Iterator.
+// Package iterator provides a candlestick Iterator.
 //
 // You can use it like this:
 //
