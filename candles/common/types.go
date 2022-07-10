@@ -177,6 +177,14 @@ func (m MarketType) String() string {
 	}
 }
 
+// MarketTypeFromString constructs a MarketType from a string.
+func MarketTypeFromString(s string) MarketType {
+	if s == "COIN" {
+		return COIN
+	}
+	return UNSUPPORTED
+}
+
 // ISO8601 adds convenience methods for converting ISO8601-formatted date strings.
 type ISO8601 string
 

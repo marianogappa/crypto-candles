@@ -1,7 +1,6 @@
 package iterator
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -248,34 +247,12 @@ func TestIterator(t *testing.T) {
 		t.Run(ts.name, func(t *testing.T) {
 			cache := cache.NewMemoryCache(map[time.Duration]int{time.Minute: 128, 24 * time.Hour: 128})
 			iterator, err := NewIterator(ts.marketSource, ts.startTime, ts.candlestickInterval, cache, ts.candlestickProvider, WithTimeNowFunc(ts.timeNowFunc), WithStartFromNext(ts.startFromNext))
-			if err == nil && ts.errCreatingIterator != nil {
-				t.Logf("expected error '%v' but had no error", ts.errCreatingIterator)
-				t.FailNow()
-			}
-			if err != nil && ts.errCreatingIterator == nil {
-				t.Logf("expected no error but had '%v'", err)
-				t.FailNow()
-			}
-			if err != nil && !errors.Is(err, ts.errCreatingIterator) {
-				t.Errorf("expected error %v but got %v", ts.errCreatingIterator, err)
-				t.FailNow()
-			}
+			require.ErrorIs(t, err, ts.errCreatingIterator)
 
 			for _, expectedResp := range ts.expectedCallResponses {
 				actualCandlestick, actualErr := iterator.Next()
 				actualTick := actualCandlestick.ToTick()
-				if actualErr != nil && expectedResp.err == nil {
-					t.Logf("expected no error but had '%v'", actualErr)
-					t.FailNow()
-				}
-				if actualErr == nil && expectedResp.err != nil {
-					t.Logf("expected error '%v' but had no error", actualErr)
-					t.FailNow()
-				}
-				if expectedResp.err != nil && actualErr != nil && !errors.Is(actualErr, expectedResp.err) {
-					t.Logf("expected error '%v' but had error '%v'", expectedResp.err, actualErr)
-					t.FailNow()
-				}
+				require.ErrorIs(t, actualErr, expectedResp.err)
 				if expectedResp.err == nil {
 					require.Equal(t, expectedResp.tick, actualTick)
 				}
@@ -355,6 +332,42 @@ func TestTickIteratorUsesCache(t *testing.T) {
 	require.Equal(t, common.ErrOutOfCandlesticks, err)
 
 	require.Len(t, testCandlestickProvider2.calls, 1) // Cache was used!! Only last call after cache consumed.
+}
+
+func TestScannerInterface(t *testing.T) {
+	msBTCUSDT := common.MarketSource{
+		Type:       common.COIN,
+		Provider:   "BINANCE",
+		BaseAsset:  "BTC",
+		QuoteAsset: "USDT",
+	}
+	cstick1 := common.Candlestick{Timestamp: tInt("2020-01-02 00:00:00"), OpenPrice: 1234, HighestPrice: 1234, LowestPrice: 1234, ClosePrice: 1234}
+	cstick2 := common.Candlestick{Timestamp: tInt("2020-01-02 00:01:00"), OpenPrice: 1234, HighestPrice: 1234, LowestPrice: 1234, ClosePrice: 1234}
+	cstick3 := common.Candlestick{Timestamp: tInt("2020-01-02 00:02:00"), OpenPrice: 1234, HighestPrice: 1234, LowestPrice: 1234, ClosePrice: 1234}
+
+	testCandlestickProvider1 := newTestCandlestickProvider([]testCandlestickProviderResponse{
+		{candlesticks: []common.Candlestick{cstick1, cstick2, cstick3}, err: nil},
+		{candlesticks: nil, err: common.ErrOutOfCandlesticks},
+	})
+	it, _ := NewIterator(
+		msBTCUSDT,
+		tp("2020-01-02 00:00:00"),
+		time.Minute,
+		nil,
+		testCandlestickProvider1,
+	)
+	var cs common.Candlestick
+	require.True(t, it.Scan(&cs))
+	require.Nil(t, it.Error())
+	require.Equal(t, cstick1, cs)
+	require.True(t, it.Scan(&cs))
+	require.Nil(t, it.Error())
+	require.Equal(t, cstick2, cs)
+	require.True(t, it.Scan(&cs))
+	require.Nil(t, it.Error())
+	require.Equal(t, cstick3, cs)
+	require.False(t, it.Scan(&cs))
+	require.ErrorIs(t, it.Error(), common.ErrOutOfCandlesticks)
 }
 
 type response struct {

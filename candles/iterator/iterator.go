@@ -145,7 +145,7 @@ func (t *Impl) Next() (common.Candlestick, error) {
 
 	// Put in the cache for future uses.
 	if t.candlestickCache != nil {
-		if err := t.candlestickCache.Put(t.metric, candlesticks); err != nil {
+		if err := t.candlestickCache.Put(t.metric, candlesticks); err != nil && err != cache.ErrCacheNotConfiguredForCandlestickInterval {
 			log.Info().Msgf("IteratorImpl.Next: ignoring error putting into cache: %v\n", err)
 		}
 	}

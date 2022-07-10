@@ -80,7 +80,7 @@ func (e *Coinbase) requestCandlesticks(baseAsset string, quoteAsset string, star
 	q.Add("granularity", fmt.Sprintf("%v", granularity))
 
 	startTimeISO8601 := startTime.Format(time.RFC3339)
-	endTimeISO8601 := startTime.Add(299 * 60 * time.Second).Format(time.RFC3339)
+	endTimeISO8601 := startTime.Add(299 * candlestickInterval).Format(time.RFC3339)
 
 	q.Add("start", fmt.Sprintf("%v", startTimeISO8601))
 	q.Add("end", fmt.Sprintf("%v", endTimeISO8601))
@@ -91,7 +91,7 @@ func (e *Coinbase) requestCandlesticks(baseAsset string, quoteAsset string, star
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, common.CandleReqError{IsNotRetryable: true, Err: common.ErrExecutingRequest}
+		return nil, common.CandleReqError{IsNotRetryable: true, Err: fmt.Errorf("%w: %v", common.ErrExecutingRequest, err)}
 	}
 	defer resp.Body.Close()
 

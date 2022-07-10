@@ -91,7 +91,7 @@ func (e *FTX) requestCandlesticks(baseAsset string, quoteAsset string, startTime
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, common.CandleReqError{IsNotRetryable: true, Err: common.ErrExecutingRequest}
+		return nil, common.CandleReqError{IsNotRetryable: true, Err: fmt.Errorf("%w: %v", common.ErrExecutingRequest, err)}
 	}
 	defer resp.Body.Close()
 
