@@ -26,8 +26,8 @@ func main() {
 	m := candles.NewMarket()
 	iter, err := m.Iterator(
 		common.MarketSource{Type: common.COIN, Provider: common.BINANCE, BaseAsset: "BTC", QuoteAsset: "USDT"},
-		time.Now().Add(-12*time.Hour),
-		1*time.Hour,
+		time.Now().Add(-12*time.Hour), // Start time
+		1*time.Hour,                   // Candlestick interval
 	)
 	if err != nil {
 		log.Fatal(err)
