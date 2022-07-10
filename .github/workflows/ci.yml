@@ -14,7 +14,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - uses: codecov/codecov-action@v3
 
     - name: Set up Go
       uses: actions/setup-go@v2
@@ -43,4 +42,6 @@ jobs:
       run: golint ./...
 
     - name: Run tests
-      run: go test -race -vet=off ./...
+      run: go test -race -vet=off -coverprofile=coverage.out -covermode=atomic ./...
+
+    - uses: codecov/codecov-action@v3
