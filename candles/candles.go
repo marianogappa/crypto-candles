@@ -17,14 +17,17 @@ import (
 	"github.com/marianogappa/crypto-candles/candles/kucoin"
 )
 
-// Market struct implements the crypto market.
+// Market is the main struct of the candles package. From a Market, Iterators are created.
+//
+// The Market guarantees that no two requests to the same exchange happen concurrently, and owns the cache, so you
+// should only construct a Market once.
 type Market struct {
 	cache     *cache.MemoryCache
 	exchanges map[string]common.Exchange
 	debug     bool
 }
 
-// NewMarket constructs a market.
+// NewMarket constructs a Market.
 func NewMarket(options ...func(*Market)) Market {
 	m := Market{exchanges: buildExchanges()}
 
