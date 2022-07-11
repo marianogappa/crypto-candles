@@ -156,7 +156,7 @@ func (e *Kucoin) requestCandlesticks(baseAsset string, quoteAsset string, startT
 	maybeResponse := response{}
 	err = json.Unmarshal(byts, &maybeResponse)
 	if err == nil && (maybeResponse.Code != "200000" || maybeResponse.Msg != "") {
-		if maybeResponse.Code == "400100" && maybeResponse.Msg == "This pair is not provided at present" {
+		if maybeResponse.Code == "400100" && maybeResponse.Msg == "This pair is not provided at present." {
 			return nil, common.CandleReqError{IsNotRetryable: true, IsExchangeSide: true, Err: common.ErrInvalidMarketPair}
 		}
 
