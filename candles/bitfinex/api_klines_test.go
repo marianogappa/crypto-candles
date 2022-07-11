@@ -111,7 +111,11 @@ func TestUnhappyToCandlesticksWithRequest(t *testing.T) {
 }
 
 func TestPatience(t *testing.T) {
-	require.Equal(t, NewBitfinex().Patience(), 1*time.Minute)
+	require.Equal(t, 1*time.Minute, NewBitfinex().Patience())
+}
+
+func TestName(t *testing.T) {
+	require.Equal(t, "BITFINEX", NewBitfinex().Name())
 }
 
 func TestInvalidMarketPair(t *testing.T) {

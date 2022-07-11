@@ -9,34 +9,89 @@ import (
 	"time"
 
 	"github.com/marianogappa/crypto-candles/candles/common"
+	"github.com/stretchr/testify/require"
 )
 
 func TestHappyToCandlesticks(t *testing.T) {
-	testCandlestick := `[[1626868560,31540.72,31584.3,31540.72,31576.13,0.08432516]]`
+	testCandlestick := `
+	[
+		[
+			1642330740,
+			42915.09,
+			42993.82,
+			42986.05,
+			42940.33,
+			14.98295725
+		],
+		[
+			1642330680,
+			42974.87,
+			43011.69,
+			43007.47,
+			42983.91,
+			9.55765529
+		],
+		[
+			1642330620,
+			43007.46,
+			43037.04,
+			43033.15,
+			43007.73,
+			1.0528287
+		]
+	]
+	`
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, testCandlestick)
+	}))
 
-	sr := successResponse{}
-	err := json.Unmarshal([]byte(testCandlestick), &sr)
-	if err != nil {
-		t.Fatalf("Unmarshal failed: %v", err)
-	}
+	b := NewCoinbase()
+	b.SetDebug(true)
+	b.requester.Strategy = common.RetryStrategy{Attempts: 1}
+	b.apiURL = ts.URL + "/"
 
-	cs, err := coinbaseToCandlesticks(sr)
-	if err != nil {
-		t.Fatalf("Candlestick should have converted successfully but returned: %v", err)
+	actual, err := b.RequestCandlesticks(msBTCUSDT, tp("2022-01-16T10:57:00+00:00"), time.Minute)
+	require.Nil(t, err)
+
+	expected := []common.Candlestick{
+		{
+			Timestamp:    1642330620,
+			LowestPrice:  f(43007.46),
+			HighestPrice: f(43037.04),
+			OpenPrice:    f(43033.15),
+			ClosePrice:   f(43007.73),
+		},
+		{
+			Timestamp:    1642330680,
+			LowestPrice:  f(42974.87),
+			HighestPrice: f(43011.69),
+			OpenPrice:    f(43007.47),
+			ClosePrice:   f(42983.91),
+		},
+		{
+			Timestamp:    1642330740,
+			LowestPrice:  f(42915.09),
+			HighestPrice: f(42993.82),
+			OpenPrice:    f(42986.05),
+			ClosePrice:   f(42940.33),
+		},
 	}
-	if len(cs) != 1 {
-		t.Fatalf("Should have converted 1 candlesticks but converted: %v", len(cs))
-	}
-	expected := common.Candlestick{
-		Timestamp:    1626868560,
-		OpenPrice:    f(31540.72),
-		ClosePrice:   f(31576.13),
-		LowestPrice:  f(31540.72),
-		HighestPrice: f(31584.3),
-	}
-	if cs[0] != expected {
-		t.Fatalf("Candlestick should have been %v but was %v", expected, cs[0])
-	}
+	fmt.Printf("%+v\n", actual)
+
+	require.Equal(t, expected, actual)
+}
+
+func TestOutOfCandlesticks(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, `[]`)
+	}))
+
+	b := NewCoinbase()
+	b.requester.Strategy = common.RetryStrategy{Attempts: 1}
+	b.apiURL = ts.URL + "/"
+
+	_, err := b.RequestCandlesticks(msBTCUSDT, tp("2022-01-16T10:57:00+00:00"), time.Minute)
+	require.Equal(t, err.(common.CandleReqError).Err, common.ErrOutOfCandlesticks)
 }
 
 func TestUnhappyToCandlesticks(t *testing.T) {
@@ -84,6 +139,14 @@ func TestKlinesInvalidUrl(t *testing.T) {
 	}
 }
 
+func TestKlinesInvalidGranularity(t *testing.T) {
+	b := NewCoinbase()
+	b.requester.Strategy = common.RetryStrategy{Attempts: 1}
+	b.apiURL = "just so it doesn't actually call Coinbase"
+	_, err := b.RequestCandlesticks(msBTCUSDT, tp("2021-07-04T14:14:18+00:00"), 160*time.Minute)
+	require.ErrorIs(t, err.(common.CandleReqError).Err, common.ErrUnsupportedCandlestickInterval)
+}
+
 func TestKlinesErrReadingResponseBody(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Length", "1")
@@ -112,6 +175,18 @@ func TestKlinesErrorResponse(t *testing.T) {
 	if err == nil {
 		t.Fatalf("should have failed due to error response")
 	}
+}
+func TestKlinesErrorNotFound(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, `{"message": "NotFound"}`)
+	}))
+	defer ts.Close()
+
+	b := NewCoinbase()
+	b.requester.Strategy = common.RetryStrategy{Attempts: 1}
+	b.apiURL = ts.URL + "/"
+	_, err := b.RequestCandlesticks(msBTCUSDT, tp("2021-07-04T14:14:18+00:00"), time.Minute)
+	require.ErrorIs(t, err.(common.CandleReqError).Err, common.ErrInvalidMarketPair)
 }
 
 func TestKlinesNon200Response(t *testing.T) {
@@ -159,6 +234,14 @@ func TestKlinesInvalidFloatsInJSONResponse(t *testing.T) {
 	if err == nil {
 		t.Fatalf("should have failed due to invalid floats in json")
 	}
+}
+
+func TestPatience(t *testing.T) {
+	require.Equal(t, 2*time.Minute, NewCoinbase().Patience())
+}
+
+func TestName(t *testing.T) {
+	require.Equal(t, "COINBASE", NewCoinbase().Name())
 }
 
 func f(fl float64) common.JSONFloat64 {
