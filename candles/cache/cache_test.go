@@ -870,3 +870,11 @@ func tInt(s string) int {
 func TestDoesNotFailWhenCreatedWithZeroSize(t *testing.T) {
 	NewMemoryCache(map[time.Duration]int{time.Minute: 0, 24 * time.Hour: 0})
 }
+
+func TestNotConfiguredForCandlestickInterval(t *testing.T) {
+	c := NewMemoryCache(map[time.Duration]int{})
+	err := c.Put(Metric{Name: "test", CandlestickInterval: 160 * time.Minute}, []common.Candlestick{{}})
+	require.ErrorIs(t, err, ErrCacheNotConfiguredForCandlestickInterval)
+	_, err = c.Get(Metric{Name: "test", CandlestickInterval: 160 * time.Minute}, common.ISO8601("2020-01-02T03:04:05Z"))
+	require.ErrorIs(t, err, ErrCacheNotConfiguredForCandlestickInterval)
+}
