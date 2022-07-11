@@ -19,16 +19,6 @@ type errorResponse struct {
 	Msg  string `json:"msg"`
 }
 
-func (r errorResponse) toError() error {
-	if r.Code == 0 && r.Msg == "" {
-		return nil
-	}
-	if r.Code == eRRINVALIDSYMBOL {
-		return common.ErrInvalidMarketPair
-	}
-	return fmt.Errorf("binance returned error code! Code: %v, Message: %v", r.Code, r.Msg)
-}
-
 // [
 //   [
 //     1499040000000,      // Open time
@@ -256,8 +246,23 @@ func (e *BinanceUSDMFutures) requestCandlesticks(baseAsset string, quoteAsset st
 
 	maybeErrorResponse := errorResponse{}
 	err = json.Unmarshal(byts, &maybeErrorResponse)
-	errResp := maybeErrorResponse.toError()
-	if err == nil && errResp != nil {
+	if err == nil && maybeErrorResponse.Code != 0 {
+		if resp.StatusCode == http.StatusTooManyRequests && len(resp.Header["Retry-After"]) == 1 {
+			seconds, _ := strconv.Atoi(resp.Header["Retry-After"][0])
+			retryAfter := time.Duration(seconds) * time.Second
+			return nil, common.CandleReqError{
+				IsNotRetryable: false,
+				IsExchangeSide: true,
+				Code:           maybeErrorResponse.Code,
+				Err:            common.ErrRateLimit,
+				RetryAfter:     retryAfter,
+			}
+		}
+
+		if maybeErrorResponse.Code == eRRINVALIDSYMBOL {
+			return nil, common.CandleReqError{IsNotRetryable: true, IsExchangeSide: true, Code: maybeErrorResponse.Code, Err: common.ErrInvalidMarketPair}
+		}
+
 		return nil, common.CandleReqError{
 			IsNotRetryable: false,
 			IsExchangeSide: true,
