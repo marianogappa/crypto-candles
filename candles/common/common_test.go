@@ -97,6 +97,40 @@ func TestCandlestickToTicks(t *testing.T) {
 	}
 }
 
+func TestCandlesticksToTicks(t *testing.T) {
+	candlesticks := []Candlestick{
+		{
+			Timestamp:    20,
+			OpenPrice:    f(1),
+			ClosePrice:   f(2),
+			LowestPrice:  f(3),
+			HighestPrice: f(4),
+		},
+		{
+			Timestamp:    21,
+			OpenPrice:    f(5),
+			ClosePrice:   f(6),
+			LowestPrice:  f(7),
+			HighestPrice: f(8),
+		},
+		{
+			Timestamp:    22,
+			OpenPrice:    f(9),
+			ClosePrice:   f(10),
+			LowestPrice:  f(11),
+			HighestPrice: f(12),
+		},
+	}
+
+	expected := []Tick{
+		{Timestamp: 20, Value: 2},
+		{Timestamp: 21, Value: 6},
+		{Timestamp: 22, Value: 10},
+	}
+
+	require.Equal(t, expected, CandlesticksToTicks(candlesticks))
+}
+
 func f(fl float64) JSONFloat64 {
 	return JSONFloat64(fl)
 }
