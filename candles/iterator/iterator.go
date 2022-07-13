@@ -36,6 +36,9 @@ type Iterator interface {
 
 	Scan(*common.Candlestick) bool
 	Error() error
+
+	SetStartFromNext(bool)
+	SetTimeNowFunc(func() time.Time)
 }
 
 // Impl is the struct for the market Iterator.
@@ -48,12 +51,15 @@ type Impl struct {
 	metric              cache.Metric
 	timeNowFunc         func() time.Time
 	startFromNext       bool
+	startTime           time.Time
 	lastTs              int
 	lastErr             error
+
+	hasStarted bool // used to panic if SetStartFromNext() is called after Next() is called.
 }
 
 // NewIterator constructs a market Iterator.
-func NewIterator(marketSource common.MarketSource, startTime time.Time, candlestickInterval time.Duration, candlestickCache *cache.MemoryCache, candlestickProvider common.CandlestickProvider, options ...func(*Impl)) (*Impl, error) {
+func NewIterator(marketSource common.MarketSource, startTime time.Time, candlestickInterval time.Duration, candlestickCache *cache.MemoryCache, candlestickProvider common.CandlestickProvider) (*Impl, error) {
 	iter := Impl{
 		marketSource:        marketSource,
 		candlestickCache:    candlestickCache,
@@ -61,35 +67,34 @@ func NewIterator(marketSource common.MarketSource, startTime time.Time, candlest
 		candlesticks:        []common.Candlestick{},
 		candlestickInterval: candlestickInterval,
 		metric:              cache.Metric{Name: marketSource.String(), CandlestickInterval: candlestickInterval},
+		startTime:           startTime,
+		timeNowFunc:         time.Now,
 	}
-	for _, option := range options {
-		option(&iter)
-	}
-	if iter.timeNowFunc == nil {
-		iter.timeNowFunc = time.Now
-	}
-
-	startTs := common.NormalizeTimestamp(startTime, candlestickInterval, candlestickProvider.Name(), iter.startFromNext)
-	iter.lastTs = startTs - int(candlestickInterval/time.Second)
+	iter.lastTs = iter.calculateLastTs()
 
 	return &iter, nil
 }
 
-// WithTimeNowFunc overrides time.Now() for testing purposes. Current time is used to decide if there are no new
-// candlesticks available, because the requested time would be in the future or the recent present.
-func WithTimeNowFunc(f func() time.Time) func(*Impl) {
-	return func(impl *Impl) {
-		impl.timeNowFunc = f
-	}
+func (it *Impl) calculateLastTs() int {
+	startTs := common.NormalizeTimestamp(it.startTime, it.candlestickInterval, it.candlestickProvider.Name(), it.startFromNext)
+	return startTs - int(it.candlestickInterval/time.Second)
 }
 
-// WithStartFromNext moves the startTime to one candlestickInterval in the future. This is useful when the caller
+// SetTimeNowFunc overrides time.Now() for testing purposes. Current time is used to decide if there are no new
+// candlesticks available, because the requested time would be in the future or the recent present.
+func (it *Impl) SetTimeNowFunc(f func() time.Time) {
+	it.timeNowFunc = f
+}
+
+// SetStartFromNext moves the startTime to one candlestickInterval in the future. This is useful when the caller
 // has already consumed the "startTime" candlestick and has saved this time in their state, so they want to start
 // consuming from the next time.
-func WithStartFromNext(b bool) func(*Impl) {
-	return func(impl *Impl) {
-		impl.startFromNext = b
+func (it *Impl) SetStartFromNext(b bool) {
+	if it.hasStarted {
+		panic("SetStartFromNext() cannot be called after Next() is called")
 	}
+	it.startFromNext = b
+	it.lastTs = it.calculateLastTs()
 }
 
 // Next is the "Next" iterator function, providing the next available Candlestick (as opposed to Tick).
@@ -102,6 +107,8 @@ func WithStartFromNext(b bool) func(*Impl) {
 // - ErrNoNewTicksYet: timestamp is already in the present.
 // - ErrExchangeReturnedNoTicks: exchange got the request and returned no results.
 func (t *Impl) Next() (common.Candlestick, error) {
+	t.hasStarted = true
+
 	// If the candlesticks buffer is empty, try to get candlesticks from the cache.
 	if len(t.candlesticks) == 0 && t.candlestickCache != nil {
 		ticks, err := t.candlestickCache.Get(t.metric, t.nextISO8601())

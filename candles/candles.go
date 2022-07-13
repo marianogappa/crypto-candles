@@ -92,7 +92,7 @@ func WithCacheSizes(cacheSizes map[time.Duration]int) func(*Market) {
 }
 
 // Iterator returns a market iterator for a given operand at a given time and for a given candlestick interval.
-func (m Market) Iterator(marketSource common.MarketSource, startTime time.Time, candlestickInterval time.Duration, options ...func(*iterator.Impl)) (iterator.Iterator, error) {
+func (m Market) Iterator(marketSource common.MarketSource, startTime time.Time, candlestickInterval time.Duration) (iterator.Iterator, error) {
 	if marketSource.Type != common.COIN {
 		return nil, common.ErrInvalidMarketType
 	}
@@ -100,7 +100,7 @@ func (m Market) Iterator(marketSource common.MarketSource, startTime time.Time, 
 	if exchange == nil {
 		return nil, fmt.Errorf("%w: the '%v' provider is not supported", common.ErrUnsuportedCandlestickProvider, marketSource.Provider)
 	}
-	return iterator.NewIterator(marketSource, startTime, candlestickInterval, m.cache, exchange, options...)
+	return iterator.NewIterator(marketSource, startTime, candlestickInterval, m.cache, exchange)
 }
 
 // SetDebug sets debug logging across all exchanges and the Market struct itself. Useful to know how many times an

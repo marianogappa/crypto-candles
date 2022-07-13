@@ -246,7 +246,9 @@ func TestIterator(t *testing.T) {
 	for _, ts := range tss {
 		t.Run(ts.name, func(t *testing.T) {
 			cache := cache.NewMemoryCache(map[time.Duration]int{time.Minute: 128, 24 * time.Hour: 128})
-			iterator, err := NewIterator(ts.marketSource, ts.startTime, ts.candlestickInterval, cache, ts.candlestickProvider, WithTimeNowFunc(ts.timeNowFunc), WithStartFromNext(ts.startFromNext))
+			iterator, err := NewIterator(ts.marketSource, ts.startTime, ts.candlestickInterval, cache, ts.candlestickProvider)
+			iterator.SetStartFromNext(ts.startFromNext)
+			iterator.SetTimeNowFunc(ts.timeNowFunc)
 			require.ErrorIs(t, err, ts.errCreatingIterator)
 
 			for _, expectedResp := range ts.expectedCallResponses {
@@ -288,8 +290,8 @@ func TestTickIteratorUsesCache(t *testing.T) {
 		time.Minute,
 		cache,
 		testCandlestickProvider1,
-		WithTimeNowFunc(func() time.Time { return tp("2022-01-03 00:00:00") }),
 	)
+	it1.SetTimeNowFunc(func() time.Time { return tp("2022-01-03 00:00:00") })
 	cs, err := it1.Next()
 	tick := cs.ToTick()
 	require.Nil(t, err)
@@ -314,8 +316,8 @@ func TestTickIteratorUsesCache(t *testing.T) {
 		time.Minute,
 		cache, // Reusing cache, so cache should kick in and prevent testCandlestickProvider2 from being called
 		testCandlestickProvider2,
-		WithTimeNowFunc(func() time.Time { return tp("2022-01-03 00:00:00") }),
 	)
+	it2.SetTimeNowFunc(func() time.Time { return tp("2022-01-03 00:00:00") })
 	cs, err = it2.Next()
 	tick = cs.ToTick()
 	require.Nil(t, err)

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/marianogappa/crypto-candles/candles/common"
-	"github.com/marianogappa/crypto-candles/candles/iterator"
 	"github.com/stretchr/testify/require"
 )
 
@@ -57,7 +56,8 @@ func TestIntegration(t *testing.T) {
 	mkt.CalculateCacheHitRatio()
 	for _, ts := range testCases {
 		t.Run(ts.name, func(t *testing.T) {
-			it, err := mkt.Iterator(ts.marketSource, ts.startTime, ts.candlestickInterval, iterator.WithStartFromNext(ts.startFromNext))
+			it, err := mkt.Iterator(ts.marketSource, ts.startTime, ts.candlestickInterval)
+			it.SetStartFromNext(ts.startFromNext)
 			require.Nil(t, err)
 			for i, expectedCandlestick := range ts.expectedCandlesticks {
 				candlestick, err := it.Next()
