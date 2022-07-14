@@ -125,37 +125,37 @@ func (e *Bitstamp) requestCandlesticks(baseAsset string, quoteAsset string, star
 
 	if resp.StatusCode == http.StatusTooManyRequests {
 		// https://www.bitstamp.net/api/#what-is-api
-		return nil, common.CandleReqError{IsNotRetryable: true, IsExchangeSide: true, Err: common.ErrRateLimit}
+		return nil, common.CandleReqError{IsNotRetryable: true, Err: common.ErrRateLimit}
 	}
 
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, common.CandleReqError{IsNotRetryable: true, IsExchangeSide: true, Err: common.ErrInvalidMarketPair}
+		return nil, common.CandleReqError{IsNotRetryable: true, Err: common.ErrInvalidMarketPair}
 	}
 
 	// Catch-all for non-200 errors
 	if resp.StatusCode != http.StatusOK {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: fmt.Errorf("exchange returned status code %v", resp.StatusCode)}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: fmt.Errorf("exchange returned status code %v", resp.StatusCode)}
 	}
 
 	byts, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: common.ErrBrokenBodyResponse}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: common.ErrBrokenBodyResponse}
 	}
 
 	maybeResponse := response{}
 	if err := json.Unmarshal(byts, &maybeResponse); err != nil {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: common.ErrInvalidJSONResponse}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: common.ErrInvalidJSONResponse}
 	}
 
 	// All listed errors are unretryable.
 	// https://www.bitstamp.net/api/#ohlc_data
 	if len(maybeResponse.Errors) > 0 {
-		return nil, common.CandleReqError{IsNotRetryable: true, IsExchangeSide: true, Err: maybeResponse.toError()}
+		return nil, common.CandleReqError{IsNotRetryable: true, Err: maybeResponse.toError()}
 	}
 
 	candlesticks, err := maybeResponse.toCandlesticks()
 	if err != nil {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: err}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: err}
 	}
 
 	if e.debug {
@@ -163,7 +163,7 @@ func (e *Bitstamp) requestCandlesticks(baseAsset string, quoteAsset string, star
 	}
 
 	if len(candlesticks) == 0 {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: common.ErrOutOfCandlesticks}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: common.ErrOutOfCandlesticks}
 	}
 
 	return candlesticks, nil

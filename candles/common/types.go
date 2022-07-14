@@ -78,7 +78,6 @@ type CandleReqError struct {
 	Code           int
 	Err            error
 	IsNotRetryable bool
-	IsExchangeSide bool
 	RetryAfter     time.Duration
 }
 

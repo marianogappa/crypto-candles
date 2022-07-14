@@ -240,7 +240,7 @@ func (e *Binance) requestCandlesticks(baseAsset string, quoteAsset string, start
 
 	byts, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: common.ErrBrokenBodyResponse}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: common.ErrBrokenBodyResponse}
 	}
 
 	maybeErrorResponse := errorResponse{}
@@ -251,7 +251,6 @@ func (e *Binance) requestCandlesticks(baseAsset string, quoteAsset string, start
 			retryAfter := time.Duration(seconds) * time.Second
 			return nil, common.CandleReqError{
 				IsNotRetryable: false,
-				IsExchangeSide: true,
 				Code:           maybeErrorResponse.Code,
 				Err:            common.ErrRateLimit,
 				RetryAfter:     retryAfter,
@@ -259,12 +258,11 @@ func (e *Binance) requestCandlesticks(baseAsset string, quoteAsset string, start
 		}
 
 		if maybeErrorResponse.Code == eRRINVALIDSYMBOL {
-			return nil, common.CandleReqError{IsNotRetryable: true, IsExchangeSide: true, Code: maybeErrorResponse.Code, Err: common.ErrInvalidMarketPair}
+			return nil, common.CandleReqError{IsNotRetryable: true, Code: maybeErrorResponse.Code, Err: common.ErrInvalidMarketPair}
 		}
 
 		return nil, common.CandleReqError{
 			IsNotRetryable: false,
-			IsExchangeSide: true,
 			Code:           maybeErrorResponse.Code,
 			Err:            errors.New(maybeErrorResponse.Msg),
 		}
@@ -273,16 +271,16 @@ func (e *Binance) requestCandlesticks(baseAsset string, quoteAsset string, start
 	maybeResponse := successfulResponse{}
 	err = json.Unmarshal(byts, &maybeResponse.ResponseCandlesticks)
 	if err != nil {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: common.ErrInvalidJSONResponse}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: common.ErrInvalidJSONResponse}
 	}
 
 	candlesticks, err := maybeResponse.toCandlesticks()
 	if err != nil {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: err}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: err}
 	}
 
 	if len(candlesticks) == 0 {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: common.ErrOutOfCandlesticks}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: common.ErrOutOfCandlesticks}
 	}
 
 	if e.debug {

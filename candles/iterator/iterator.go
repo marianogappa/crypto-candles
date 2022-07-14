@@ -106,44 +106,44 @@ func (it *Impl) SetStartFromNext(b bool) {
 //
 // - ErrNoNewTicksYet: timestamp is already in the present.
 // - ErrExchangeReturnedNoTicks: exchange got the request and returned no results.
-func (t *Impl) Next() (common.Candlestick, error) {
-	t.hasStarted = true
+func (it *Impl) Next() (common.Candlestick, error) {
+	it.hasStarted = true
 
 	// If the candlesticks buffer is empty, try to get candlesticks from the cache.
-	if len(t.candlesticks) == 0 && t.candlestickCache != nil {
-		ticks, err := t.candlestickCache.Get(t.metric, t.nextISO8601())
+	if len(it.candlesticks) == 0 && it.candlestickCache != nil {
+		ticks, err := it.candlestickCache.Get(it.metric, it.nextISO8601())
 		if err == nil {
-			t.candlesticks = ticks
+			it.candlesticks = ticks
 		}
 	}
 
 	// If the ticks buffer isn't empty (cache hit), use it.
-	if len(t.candlesticks) > 0 {
-		candlestick := t.candlesticks[0]
-		t.candlesticks = t.candlesticks[1:]
-		t.lastTs = candlestick.Timestamp
+	if len(it.candlesticks) > 0 {
+		candlestick := it.candlesticks[0]
+		it.candlesticks = it.candlesticks[1:]
+		it.lastTs = candlestick.Timestamp
 		return candlestick, nil
 	}
 
 	// If we reach here, before asking the exchange, let's see if it's too early to have new values.
-	if t.nextTime().After(t.timeNowFunc().Add(-t.candlestickProvider.Patience() - t.candlestickInterval)) {
+	if it.nextTime().After(it.timeNowFunc().Add(-it.candlestickProvider.Patience() - it.candlestickInterval)) {
 		return common.Candlestick{}, common.ErrNoNewTicksYet
 	}
 
 	// If we reach here, the buffer was empty and the cache was empty too. Last chance: try the exchange.
-	candlesticks, err := t.candlestickProvider.RequestCandlesticks(t.marketSource, t.nextTime(), t.candlestickInterval)
+	candlesticks, err := it.candlestickProvider.RequestCandlesticks(it.marketSource, it.nextTime(), it.candlestickInterval)
 	if err != nil {
 		return common.Candlestick{}, err
 	}
 
 	// If the exchange returned early candlesticks, prune them.
-	candlesticks = t.pruneOlderCandlesticks(candlesticks)
+	candlesticks = it.pruneOlderCandlesticks(candlesticks)
 	if len(candlesticks) == 0 {
 		return common.Candlestick{}, common.ErrExchangeReturnedNoTicks
 	}
 
 	// The first retrieved candlestick from the exchange must be exactly the required one.
-	nextTs := t.nextTs()
+	nextTs := it.nextTs()
 	if candlesticks[0].Timestamp != nextTs {
 		expected := time.Unix(int64(nextTs), 0).Format(time.RFC3339)
 		actual := time.Unix(int64(candlesticks[0].Timestamp), 0).Format(time.RFC3339)
@@ -151,16 +151,16 @@ func (t *Impl) Next() (common.Candlestick, error) {
 	}
 
 	// Put in the cache for future uses.
-	if t.candlestickCache != nil {
-		if err := t.candlestickCache.Put(t.metric, candlesticks); err != nil && err != cache.ErrCacheNotConfiguredForCandlestickInterval {
+	if it.candlestickCache != nil {
+		if err := it.candlestickCache.Put(it.metric, candlesticks); err != nil && err != cache.ErrCacheNotConfiguredForCandlestickInterval {
 			log.Info().Msgf("IteratorImpl.Next: ignoring error putting into cache: %v\n", err)
 		}
 	}
 
 	// Also put in the buffer, except for the first candlestick.
 	candlestick := candlesticks[0]
-	t.candlesticks = candlesticks[1:]
-	t.lastTs = candlestick.Timestamp
+	it.candlesticks = candlesticks[1:]
+	it.lastTs = candlestick.Timestamp
 
 	// Return the first candlestick from exchange request.
 	return candlestick, nil
@@ -168,32 +168,32 @@ func (t *Impl) Next() (common.Candlestick, error) {
 
 // Scan is the Scanner interface implementation. Returns true if the scanning happened without errors. If it returns
 // false, the error is available on iter.Error().
-func (t *Impl) Scan(candlestick *common.Candlestick) bool {
-	cs, err := t.Next()
-	t.lastErr = err
+func (it *Impl) Scan(candlestick *common.Candlestick) bool {
+	cs, err := it.Next()
+	it.lastErr = err
 	*candlestick = cs
 	return err == nil
 }
 
 // Error returns the error of the last Scan operation, or nil if it was successful.
-func (t *Impl) Error() error {
-	return t.lastErr
+func (it *Impl) Error() error {
+	return it.lastErr
 }
 
-func (t *Impl) nextISO8601() common.ISO8601 {
-	return common.ISO8601(t.nextTime().Format(time.RFC3339))
+func (it *Impl) nextISO8601() common.ISO8601 {
+	return common.ISO8601(it.nextTime().Format(time.RFC3339))
 }
 
-func (t *Impl) nextTime() time.Time {
-	return time.Unix(int64(t.nextTs()), 0)
+func (it *Impl) nextTime() time.Time {
+	return time.Unix(int64(it.nextTs()), 0)
 }
 
-func (t *Impl) nextTs() int {
-	return t.lastTs + int(t.candlestickInterval/time.Second)
+func (it *Impl) nextTs() int {
+	return it.lastTs + int(it.candlestickInterval/time.Second)
 }
 
-func (t *Impl) pruneOlderCandlesticks(candlesticks []common.Candlestick) []common.Candlestick {
-	nextTs := t.nextTs()
+func (it *Impl) pruneOlderCandlesticks(candlesticks []common.Candlestick) []common.Candlestick {
+	nextTs := it.nextTs()
 	for _, tick := range candlesticks {
 		if tick.Timestamp < nextTs {
 			candlesticks = candlesticks[1:]

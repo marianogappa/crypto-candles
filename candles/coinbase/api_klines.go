@@ -97,7 +97,7 @@ func (e *Coinbase) requestCandlesticks(baseAsset string, quoteAsset string, star
 
 	byts, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: common.ErrBrokenBodyResponse}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: common.ErrBrokenBodyResponse}
 	}
 
 	maybeErrorResponse := errorResponse{}
@@ -106,13 +106,11 @@ func (e *Coinbase) requestCandlesticks(baseAsset string, quoteAsset string, star
 		if maybeErrorResponse.Message == "NotFound" {
 			return nil, common.CandleReqError{
 				IsNotRetryable: true,
-				IsExchangeSide: true,
 				Err:            common.ErrInvalidMarketPair,
 			}
 		}
 		return nil, common.CandleReqError{
 			IsNotRetryable: false,
-			IsExchangeSide: true,
 			Err:            errors.New(maybeErrorResponse.Message),
 		}
 	}
@@ -120,12 +118,12 @@ func (e *Coinbase) requestCandlesticks(baseAsset string, quoteAsset string, star
 	maybeResponse := successResponse{}
 	err = json.Unmarshal(byts, &maybeResponse)
 	if err != nil {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: common.ErrInvalidJSONResponse}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: common.ErrInvalidJSONResponse}
 	}
 
 	candlesticks, err := coinbaseToCandlesticks(maybeResponse)
 	if err != nil {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: err}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: err}
 	}
 
 	if e.debug {
@@ -133,7 +131,7 @@ func (e *Coinbase) requestCandlesticks(baseAsset string, quoteAsset string, star
 	}
 
 	if len(candlesticks) == 0 {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: common.ErrOutOfCandlesticks}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: common.ErrOutOfCandlesticks}
 	}
 
 	// Reverse slice, because Coinbase returns candlesticks in descending order

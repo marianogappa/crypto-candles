@@ -101,7 +101,6 @@ func (e responseError) toCandleReqError() (common.CandleReqError, bool) {
 		return common.CandleReqError{}, false
 	}
 	err.Err = fmt.Errorf(fmt.Sprintf("%v: %v", err.Code, msg))
-	err.IsExchangeSide = true
 	err.IsNotRetryable = true
 
 	return err, true
@@ -162,7 +161,7 @@ func (e *Bitfinex) requestCandlesticks(baseAsset string, quoteAsset string, star
 
 	byts, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: common.ErrBrokenBodyResponse}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: common.ErrBrokenBodyResponse}
 	}
 
 	errorResp := responseError{}
@@ -174,17 +173,17 @@ func (e *Bitfinex) requestCandlesticks(baseAsset string, quoteAsset string, star
 
 	okResp := response{}
 	if err := json.Unmarshal(byts, &okResp.resp); err != nil {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: common.ErrInvalidJSONResponse}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: common.ErrInvalidJSONResponse}
 	}
 
 	candlesticks, err := okResp.toCandlesticks()
 	if err != nil {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: err}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: err}
 	}
 
 	// Bitfinex has a weird behaviour where invalid market pairs are returned as HTTP 200 with an empty array
 	if len(candlesticks) == 0 {
-		return nil, common.CandleReqError{IsNotRetryable: true, IsExchangeSide: true, Err: common.ErrInvalidMarketPair}
+		return nil, common.CandleReqError{IsNotRetryable: true, Err: common.ErrInvalidMarketPair}
 	}
 
 	if e.debug {

@@ -145,33 +145,33 @@ func (e *Kucoin) requestCandlesticks(baseAsset string, quoteAsset string, startT
 	if resp.StatusCode == http.StatusTooManyRequests {
 		// In this case we should sleep for 11 seconds due to what it says in the docs.
 		// https://github.com/marianogappa/crypto-predictions/issues/37#issuecomment-1167566211
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: common.ErrRateLimit, RetryAfter: 11 * time.Second}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: common.ErrRateLimit, RetryAfter: 11 * time.Second}
 	}
 
 	byts, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: common.ErrBrokenBodyResponse}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: common.ErrBrokenBodyResponse}
 	}
 
 	maybeResponse := response{}
 	err = json.Unmarshal(byts, &maybeResponse)
 	if err == nil && (maybeResponse.Code != "200000" || maybeResponse.Msg != "") {
 		if maybeResponse.Code == "400100" && maybeResponse.Msg == "This pair is not provided at present." {
-			return nil, common.CandleReqError{IsNotRetryable: true, IsExchangeSide: true, Err: common.ErrInvalidMarketPair}
+			return nil, common.CandleReqError{IsNotRetryable: true, Err: common.ErrInvalidMarketPair}
 		}
 
 		err := fmt.Errorf("kucoin returned error code! Code: %v, Message: %v", maybeResponse.Code, maybeResponse.Msg)
 		// https://docs.kucoin.com/#request Codes are numeric
 		code, _ := strconv.Atoi(maybeResponse.Code)
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: err, Code: code}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: err, Code: code}
 	}
 	if err != nil {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: common.ErrInvalidJSONResponse}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: common.ErrInvalidJSONResponse}
 	}
 
 	candlesticks, err := responseToCandlesticks(maybeResponse.Data)
 	if err != nil {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: err}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: err}
 	}
 
 	if e.debug {
@@ -179,7 +179,7 @@ func (e *Kucoin) requestCandlesticks(baseAsset string, quoteAsset string, startT
 	}
 
 	if len(candlesticks) == 0 {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: common.ErrOutOfCandlesticks}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: common.ErrOutOfCandlesticks}
 	}
 
 	// Reverse slice, because Kucoin returns candlesticks in descending order

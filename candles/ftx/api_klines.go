@@ -101,19 +101,18 @@ func (e *FTX) requestCandlesticks(baseAsset string, quoteAsset string, startTime
 
 	byts, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: common.ErrBrokenBodyResponse}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: common.ErrBrokenBodyResponse}
 	}
 
 	maybeResponse := response{}
 	err = json.Unmarshal(byts, &maybeResponse)
 	if err != nil {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: common.ErrInvalidJSONResponse}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: common.ErrInvalidJSONResponse}
 	}
 
 	if !maybeResponse.Success {
 		return nil, common.CandleReqError{
 			IsNotRetryable: false,
-			IsExchangeSide: true,
 			Err:            fmt.Errorf("FTX returned error: %v", maybeResponse.Error),
 			Code:           resp.StatusCode,
 		}
@@ -125,7 +124,7 @@ func (e *FTX) requestCandlesticks(baseAsset string, quoteAsset string, startTime
 
 	candlesticks := maybeResponse.toCandlesticks()
 	if len(candlesticks) == 0 {
-		return nil, common.CandleReqError{IsNotRetryable: false, IsExchangeSide: true, Err: common.ErrOutOfCandlesticks}
+		return nil, common.CandleReqError{IsNotRetryable: false, Err: common.ErrOutOfCandlesticks}
 	}
 
 	return candlesticks, nil
