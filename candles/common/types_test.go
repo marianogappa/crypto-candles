@@ -7,20 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestToTick(t *testing.T) {
-	actual := Candlestick{
-		Timestamp:    1,
-		OpenPrice:    2,
-		ClosePrice:   3,
-		LowestPrice:  4,
-		HighestPrice: 5,
-	}.ToTick()
-
-	expected := Tick{Timestamp: 1, Value: 3}
-
-	require.Equal(t, expected, actual)
-}
-
 func TestCandleReqError(t *testing.T) {
 	err := CandleReqError{Err: errors.New("for test")}
 	require.Equal(t, "for test", err.Error())

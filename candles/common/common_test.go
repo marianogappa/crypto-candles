@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"reflect"
 	"testing"
 	"time"
 
@@ -66,69 +65,6 @@ func TestToMillis(t *testing.T) {
 	if err == nil {
 		t.Fatal("should have errored, but didn't")
 	}
-}
-
-func TestCandlestickToTicks(t *testing.T) {
-	ticks := Candlestick{
-		Timestamp:    1499040000,
-		OpenPrice:    f(0.01634790),
-		ClosePrice:   f(0.01577100),
-		LowestPrice:  f(0.01575800),
-		HighestPrice: f(0.80000000),
-	}.ToTicks()
-
-	if len(ticks) != 2 {
-		t.Fatalf("expected len(ticks) == 2 but was %v", len(ticks))
-	}
-
-	expectedTicks := []Tick{
-		{
-			Timestamp: 1499040000,
-			Value:     f(0.01575800),
-		},
-		{
-			Timestamp: 1499040000,
-			Value:     f(0.80000000),
-		},
-	}
-
-	if !reflect.DeepEqual(expectedTicks, ticks) {
-		t.Fatalf("expected ticks to be %v but were %v", expectedTicks, ticks)
-	}
-}
-
-func TestCandlesticksToTicks(t *testing.T) {
-	candlesticks := []Candlestick{
-		{
-			Timestamp:    20,
-			OpenPrice:    f(1),
-			ClosePrice:   f(2),
-			LowestPrice:  f(3),
-			HighestPrice: f(4),
-		},
-		{
-			Timestamp:    21,
-			OpenPrice:    f(5),
-			ClosePrice:   f(6),
-			LowestPrice:  f(7),
-			HighestPrice: f(8),
-		},
-		{
-			Timestamp:    22,
-			OpenPrice:    f(9),
-			ClosePrice:   f(10),
-			LowestPrice:  f(11),
-			HighestPrice: f(12),
-		},
-	}
-
-	expected := []Tick{
-		{Timestamp: 20, Value: 2},
-		{Timestamp: 21, Value: 6},
-		{Timestamp: 22, Value: 10},
-	}
-
-	require.Equal(t, expected, CandlesticksToTicks(candlesticks))
 }
 
 func f(fl float64) JSONFloat64 {

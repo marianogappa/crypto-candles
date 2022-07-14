@@ -101,26 +101,6 @@ type Candlestick struct {
 	HighestPrice JSONFloat64 `json:"h"`
 }
 
-// ToTicks converts a Candlestick to two Ticks. Lowest value is put first, because since there's no way to tell
-// which one happened first, this library chooses to be pessimistic.
-func (c Candlestick) ToTicks() []Tick {
-	return []Tick{
-		{Timestamp: c.Timestamp, Value: c.LowestPrice},
-		{Timestamp: c.Timestamp, Value: c.HighestPrice},
-	}
-}
-
-// ToTick converts a Candlestick to a Tick.
-func (c Candlestick) ToTick() Tick {
-	return Tick{Timestamp: c.Timestamp, Value: c.ClosePrice}
-}
-
-// Tick is the closePrice & timestamp of a Candlestick.
-type Tick struct {
-	Timestamp int         `json:"t"`
-	Value     JSONFloat64 `json:"v"`
-}
-
 // JSONFloat64 exists only for the purpose of marshalling floats in a nicer way.
 type JSONFloat64 float64
 

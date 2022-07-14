@@ -97,7 +97,7 @@ func (it *Impl) SetStartFromNext(b bool) {
 	it.lastTs = it.calculateLastTs()
 }
 
-// Next is the "Next" iterator function, providing the next available Candlestick (as opposed to Tick).
+// Next is the "Next" iterator function, providing the next available Candlestick.
 //
 // It can fail for many reasons because it depends on requesting to an exchange, which means it could fail if the
 // Internet cable got mauled by a cat.

@@ -4,15 +4,6 @@ import (
 	"time"
 )
 
-// CandlesticksToTicks takes a candlestick slice and turns it into a slice of ticks, using their close prices.
-func CandlesticksToTicks(cs []Candlestick) []Tick {
-	ts := make([]Tick, len(cs))
-	for i := 0; i < len(cs); i++ {
-		ts[i] = Tick{Timestamp: cs[i].Timestamp, Value: cs[i].ClosePrice}
-	}
-	return ts
-}
-
 // PatchCandlestickHoles takes a slice of candlesticks and it patches any holes in it, either at the beginning or within
 // any pair of candlesticks whose difference in seconds doesn't match the supplied "durSecs", by cloning the latest
 // available candlestick "on the left", or the first candlestick (i.e. "on the right") if it's at the beginning.
