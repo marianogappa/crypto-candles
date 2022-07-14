@@ -67,10 +67,6 @@ func TestToMillis(t *testing.T) {
 	}
 }
 
-func f(fl float64) JSONFloat64 {
-	return JSONFloat64(fl)
-}
-
 func TestPatchCandlestickHoles(t *testing.T) {
 	tss := []struct {
 		name         string
