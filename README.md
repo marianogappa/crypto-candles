@@ -5,9 +5,17 @@
 ![Go Report Card](https://goreportcard.com/badge/github.com/marianogappa/crypto-candles)
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/marianogappa/crypto-candles)](https://pkg.go.dev/github.com/marianogappa/crypto-candles)
 
-Universal crypto candlestick iterator library &amp; cli
+Universal crypto candlestick iterator library &amp; CLI
 
-# Library usage
+- [x] Binance
+- [x] Binance USDM Futures
+- [x] FTX
+- [x] Coinbase
+- [x] Kucoin
+- [x] Bitstamp
+- [x] Bitfinex
+
+## Library usage
 
 ```go
 package main
@@ -59,42 +67,36 @@ Outputs
 {"t":1657468800,"o":20898.439999999999,"c":20932.349999999999,"l":20655,"h":21052.470000000001}
 ```
 
-# CLI usage
+## CLI usage
+
+Get binary from [latest release](https://github.com/marianogappa/crypto-candles/releases/latest) or `go install github.com/marianogappa/crypto-candles@latest`
 
 ```shell
-$ cryptocandles -baseAsset BTC -quoteAsset USDT -provider BINANCE -startTime '2022-01-02T03:04:05Z' -candlestickInterval 1h
+$ crypto-candles -baseAsset BTC -quoteAsset USDT -provider BINANCE -startTime '2022-01-02T03:04:05Z' -candlestickInterval 1h
 ```
 
-# Supported exchanges
+## Features
 
-- Binance
-- Binance USDM Futures
-- FTX
-- Coinbase
-- Kucoin
-- Bitstamp
-- Bitfinex
-
-(Phemex, Huobi & Kraken are not supported because they don't provide historical candlesticks or they provide them in a very inconvenient way)
-
-# Features
-
-## Caching
+**Caching**
 
 Historical candlesticks shouldn't change, so this kind of data benefits from aggressive caching. This library has a configurable concurrency-safe in-memory cache (enabled by default) so that repeated requests for the same data will be served by the cache rather than going to the exchanges, thus mitigating rate-limiting issues. Caches are configurable per-candlestick interval.
 
-## Automatic back-off & retries
+**Automatic back-off & retries**
 
 Requests to exchanges can fail for various reasons, some of which are retryable. The library will retry retryable requests with a back-off by default, and will deal with exchange-specific rate-limiting actions.
 
-## Concurrency-safe
+**Concurrency-safe**
 
 The main problem with making concurrent requests to exchanges is not that libraries are not concurrency-safe, but that making concurrent requests will cause the exchange to rate-limit the caller. This library mutexes on a per-exchange basis, so concurrent requests to the same exchange become sequential, but concurrent requests to different exchanges remain concurrent.
 
-## Unified error types
+**Unified error types**
 
 Requests to exchanges can fail for various reasons, but some errors are common to all exchanges. In these cases, the library provides some common error types, e.g.:
 
 - `common.ErrUnsupportedCandlestickInterval`
 - `common.ErrRateLimit`
 - `common.ErrInvalidMarketPair`
+
+## Contribute
+
+crypto-candles is open source software. Use it for whatever you want, and help me improve it if you can. Please open issues and send me PRs.
