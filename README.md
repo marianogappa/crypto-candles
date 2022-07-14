@@ -77,13 +77,17 @@ $ crypto-candles -baseAsset BTC -quoteAsset USDT -provider BINANCE -startTime '2
 
 ## Features
 
-**Caching**
+**Built-in in-memory LRU Caching**
 
 Historical candlesticks shouldn't change, so this kind of data benefits from aggressive caching. This library has a configurable concurrency-safe in-memory cache (enabled by default) so that repeated requests for the same data will be served by the cache rather than going to the exchanges, thus mitigating rate-limiting issues. Caches are configurable per-candlestick interval.
 
-**Automatic back-off & retries**
+**Built-in retries with back-off**
 
 Requests to exchanges can fail for various reasons, some of which are retryable. The library will retry retryable requests with a back-off by default, and will deal with exchange-specific rate-limiting actions.
+
+**Built-in patching of data holes**
+
+Exchanges' historical candlestick data has holes (i.e. there are instants for which there's no candlestick information for certain market pairs on certain candlestick intervals). This is problematic for consumers, because it's tricky to differentiate the case where the exchange has no data from the case where the consumer hasn't consumed the data point yet, which can lead to requesting the same data point forever. Also, algorithms often prefer to assume the price is a continuous function without gaps. This library patches in holes by cloning immediately preceding candlesticks.
 
 **Concurrency-safe**
 
