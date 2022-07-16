@@ -26,34 +26,34 @@ func main() {
 	flag.Parse()
 
 	if *flagProvider == "" {
-		die("Empty provider.")
+		exit("Empty provider.", true)
 	}
 	if *flagBaseAsset == "" {
-		die("Empty base asset.")
+		exit("Empty base asset.", true)
 	}
 	if *flagQuoteAsset == "" {
-		die("Empty quote asset.")
+		exit("Empty quote asset.", true)
 	}
 	if *flagStartTime == "" {
-		die("Empty start time.")
+		exit("Empty start time.", true)
 	}
 	if *flagCandlestickInterval == "" {
-		die("Empty candlestick interval.")
+		exit("Empty candlestick interval.", true)
 	}
 	if *flagLimit <= 0 {
-		die("Limit is negative or zero.")
+		exit("Limit is negative or zero.", true)
 	}
 	if *flagMarketType != "COIN" {
-		die("marketType must be 'COIN'.")
+		exit("marketType must be 'COIN'.", true)
 	}
 
 	startTime, err := time.Parse(time.RFC3339, *flagStartTime)
 	if err != nil {
-		die(fmt.Sprintf("invalid startTime '%v': %v.", *flagStartTime, err))
+		exit(fmt.Sprintf("invalid startTime '%v': %v.", *flagStartTime, err), true)
 	}
 	candlestickInterval, err := time.ParseDuration(*flagCandlestickInterval)
 	if err != nil {
-		die(fmt.Sprintf("invalid candlestickInterval '%v': %v.", *flagCandlestickInterval, err))
+		exit(fmt.Sprintf("invalid candlestickInterval '%v': %v.", *flagCandlestickInterval, err), true)
 	}
 
 	m := candles.NewMarket(candles.WithCacheSizes(map[time.Duration]int{}))
@@ -63,21 +63,24 @@ func main() {
 		candlestickInterval,
 	)
 	if err != nil {
-		die(fmt.Sprintf("error building iterator: %v", err))
+		exit(fmt.Sprintf("error building iterator: %v", err), true)
 	}
 
 	for i := 0; i < *flagLimit; i++ {
 		candlestick, err := iter.Next()
 		if err != nil {
-			die(err.Error())
+			exit(err.Error(), false)
 		}
 		bs, _ := json.Marshal(candlestick)
 		fmt.Println(string(bs))
 	}
 }
 
-func die(s string) {
+func exit(s string, showUsage bool) {
 	log.Println(s)
-	flag.Usage()
+	if showUsage {
+		flag.Usage()
+		os.Exit(1)
+	}
 	os.Exit(0)
 }
