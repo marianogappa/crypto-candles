@@ -58,7 +58,7 @@ func (e *FTX) RequestCandlesticks(marketSource common.MarketSource, startTime ti
 //
 // Some exchanges may return results for unfinished candles (e.g. the current minute) and some may not, so callers
 // should not request unfinished candles. This patience should be taken into account in addition to unfinished candles.
-func (e *FTX) Patience() time.Duration { return 0 * time.Second }
+func (e *FTX) Patience() time.Duration { return 2 * time.Minute }
 
 // Name is the name of this candlestick provider.
 func (e *FTX) Name() string { return common.FTX }

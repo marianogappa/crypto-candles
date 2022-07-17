@@ -58,7 +58,7 @@ func (e *Binance) RequestCandlesticks(marketSource common.MarketSource, startTim
 //
 // Some exchanges may return results for unfinished candles (e.g. the current minute) and some may not, so callers
 // should not request unfinished candles. This patience should be taken into account in addition to unfinished candles.
-func (e *Binance) Patience() time.Duration { return 0 * time.Minute }
+func (e *Binance) Patience() time.Duration { return 1 * time.Minute }
 
 // Name is the name of this candlestick provider.
 func (e *Binance) Name() string { return common.BINANCE }

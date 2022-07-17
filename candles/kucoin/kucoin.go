@@ -58,7 +58,7 @@ func (e *Kucoin) RequestCandlesticks(marketSource common.MarketSource, startTime
 //
 // Some exchanges may return results for unfinished candles (e.g. the current minute) and some may not, so callers
 // should not request unfinished candles. This patience should be taken into account in addition to unfinished candles.
-func (e *Kucoin) Patience() time.Duration { return 0 * time.Second }
+func (e *Kucoin) Patience() time.Duration { return 1 * time.Second }
 
 // Name is the name of this candlestick provider.
 func (e *Kucoin) Name() string { return common.KUCOIN }
