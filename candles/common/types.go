@@ -110,7 +110,7 @@ func (jf JSONFloat64) MarshalJSON() ([]byte, error) {
 	if math.IsInf(f, 0) || math.IsNaN(f) {
 		return nil, errors.New("unsupported value")
 	}
-	bs := []byte(fmt.Sprintf("%.12f", f))
+	bs := []byte(fmt.Sprintf("%.8f", f))
 	var i int
 	for i = len(bs) - 1; i >= 0; i-- {
 		if bs[i] == '0' {
