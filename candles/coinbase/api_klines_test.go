@@ -237,7 +237,7 @@ func TestKlinesInvalidFloatsInJSONResponse(t *testing.T) {
 }
 
 func TestPatience(t *testing.T) {
-	require.Equal(t, 2*time.Minute, NewCoinbase().Patience())
+	require.Equal(t, 1*time.Minute, NewCoinbase().Patience())
 }
 
 func TestName(t *testing.T) {

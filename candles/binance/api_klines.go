@@ -365,5 +365,5 @@ func (e *Binance) requestCandlesticks(baseAsset string, quoteAsset string, start
 // On the 12h interval, candlesticks exist at: 00:00 & 12:00
 // On the 1d interval, candlesticks exist at every day
 // On the 3d interval, things become interesting because months can have 28, 29, 30 & 31 days, but it follows the time.Truncate(3 day) logic
-// On the 1w interval, it also follows the time.Truncate(7 day) logic
+// On the 1w interval, it also follows the time.Add(7 day).Truncate(7 day) logic
 // On the 1M interval, candlesticks exist at the beginning of each month

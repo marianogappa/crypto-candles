@@ -324,7 +324,7 @@ func TestUnsupportedCandlestickInterval(t *testing.T) {
 }
 
 func TestPatience(t *testing.T) {
-	require.Equal(t, 0*time.Minute, NewKucoin().Patience())
+	require.Equal(t, 1*time.Minute, NewKucoin().Patience())
 }
 
 func TestName(t *testing.T) {

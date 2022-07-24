@@ -208,6 +208,6 @@ func (e *Bitfinex) requestCandlesticks(baseAsset string, quoteAsset string, star
 // On the 6h timeframe, candlesticks exist at 00:00, 06:00, 12:00 ...
 // On the 12h timeframe, candlesticks exist at 00:00 & 12:00
 // On the 1D timeframe, candlesticks exist every day at 00:00:00
-// On the 1W timeframe, INVESTIGATE FURTHER!!
+// On the 1W timeframe, it also follows the time.Add(7 day).Truncate(7 day) logic
 // On the 14D timeframe, INVESTIGATE FURTHER!!
 // On the 1M timeframe, INVESTIGATE FURTHER!!

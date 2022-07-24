@@ -190,7 +190,7 @@ func TestName(t *testing.T) {
 	require.Equal(t, "FTX", NewFTX().Name())
 }
 func TestPatience(t *testing.T) {
-	require.Equal(t, 0*time.Second, NewFTX().Patience())
+	require.Equal(t, 2*time.Minute, NewFTX().Patience())
 }
 func TestInvalidCandlestickInterval(t *testing.T) {
 	_, err := NewFTX().RequestCandlesticks(msBTCUSDT, tp("2021-07-04T14:14:18+00:00"), 60*time.Hour)

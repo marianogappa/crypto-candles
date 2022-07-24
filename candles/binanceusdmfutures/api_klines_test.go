@@ -613,7 +613,7 @@ func TestTimeframe1m(t *testing.T) {
 }
 
 func TestPatience(t *testing.T) {
-	require.Equal(t, 0*time.Minute, NewBinanceUSDMFutures().Patience())
+	require.Equal(t, 1*time.Minute, NewBinanceUSDMFutures().Patience())
 }
 
 func TestName(t *testing.T) {
