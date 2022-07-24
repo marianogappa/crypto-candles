@@ -16,7 +16,7 @@ func TestJsonFloat64(t *testing.T) {
 		expected string
 	}{
 		{f: 1.2, expected: "1.2"},
-		{f: 0.0000001234, expected: "0.0000001234"},
+		{f: 0.0000001234, expected: "0.00000012"}, // Changed max-granularity to %.8f to fix floating point display issue.
 		{f: 1.000000, expected: "1"},
 		{f: 0.000000, expected: "0"},
 		{f: 0.001000, expected: "0.001"},
