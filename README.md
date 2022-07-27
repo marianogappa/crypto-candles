@@ -7,6 +7,8 @@
 
 Universal crypto candlestick iterator library &amp; CLI
 
+[Original blogpost: 10 Gotchas for building a universal crypto candlestick iterator in Go](https://marianogappa.github.io/software/2022/07/27/10-gotchas-for-building-a-universal-crypto-candlestick-iterator-in-go/)
+
 - [x] Binance
 - [x] Binance USDM Futures
 - [x] FTX
