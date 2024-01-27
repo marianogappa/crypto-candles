@@ -225,7 +225,7 @@ func (e *Kucoin) requestCandlesticks(baseAsset string, quoteAsset string, startT
 //
 // The weekly (1week type) is interesting. Check with:
 //
-// curl -s "https://api.kucoin.com/api/v1/market/candles?symbol=BTC-USDT&type=1week&startAt=1632329924&endAt=1699669924" | jq '.data | .[] | .[0] | tonumber | todate'
+// curl -s 'https://api.kucoin.com/api/v1/market/candles?symbol=BTC-USDT&type=1week&startAt='$(TZ=UTC date -j -f"%Y-%m-%d %H:%M:%S" "2020-07-04 01:02:03" "+%s")'&endAt='$(TZ=UTC date -j -f"%Y-%m-%d %H:%M:%S" "2021-08-04 01:02:03" "+%s") | jq '.data | .[] | .[0] | tonumber | todate'
 //
-// It's not clear how it's truncating weeks, cause it's not following the time.Truncate(7 day) logic, and it's not doing
-// a "first, second, third, forth week of the month" strategy either. Not sure yet what to do in this case.
+// Don't ask me why but it snaps to Thursdays :shrugs:
+// It's not following the time.Truncate(7 day) logic, and it's not doing a "first, second, third, forth week of the month" strategy either. Not sure yet what to do in this case.
