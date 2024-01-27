@@ -11,8 +11,6 @@ import (
 const (
 	// BINANCE is an enumesque string value representing the BINANCE exchange
 	BINANCE = "BINANCE"
-	// FTX is an enumesque string value representing the FTX exchange
-	FTX = "FTX"
 	// COINBASE is an enumesque string value representing the COINBASE exchange
 	COINBASE = "COINBASE"
 	// KUCOIN is an enumesque string value representing the KUCOIN exchange

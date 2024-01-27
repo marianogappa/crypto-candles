@@ -12,34 +12,38 @@
 // package main
 //
 // import (
-// 	"fmt"
-// 	"log"
-// 	"time"
-// 	"encoding/json"
 //
-// 	"github.com/marianogappa/crypto-candles/candles"
-// 	"github.com/marianogappa/crypto-candles/candles/common"
+//	"fmt"
+//	"log"
+//	"time"
+//	"encoding/json"
+//
+//	"github.com/marianogappa/crypto-candles/candles"
+//	"github.com/marianogappa/crypto-candles/candles/common"
+//
 // )
-// func main() {
-// 	m := candles.NewMarket()
-// 	iter, err := m.Iterator(
-// 		common.MarketSource{Type: common.COIN, Provider: common.BINANCE, BaseAsset: "BTC", QuoteAsset: "USDT"},
-// 		time.Now().Add(-12*time.Hour), // Start time
-// 		1*time.Hour,                   // Candlestick interval
-// 	)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
 //
-// 	for i := 0; i < 10; i++ {
-// 		candlestick, err := iter.Next()
-// 		if err != nil {
-// 			log.Fatal(err)
-// 		}
-// 		bs, _ := json.Marshal(candlestick)
-// 		fmt.Printf("%+v\n", string(bs))
-// 	}
-// }
+//	func main() {
+//		m := candles.NewMarket()
+//		iter, err := m.Iterator(
+//			common.MarketSource{Type: common.COIN, Provider: common.BINANCE, BaseAsset: "BTC", QuoteAsset: "USDT"},
+//			time.Now().Add(-12*time.Hour), // Start time
+//			1*time.Hour,                   // Candlestick interval
+//		)
+//		if err != nil {
+//			log.Fatal(err)
+//		}
+//
+//		for i := 0; i < 10; i++ {
+//			candlestick, err := iter.Next()
+//			if err != nil {
+//				log.Fatal(err)
+//			}
+//			bs, _ := json.Marshal(candlestick)
+//			fmt.Printf("%+v\n", string(bs))
+//		}
+//	}
+//
 // ```
 package candles
 
@@ -55,7 +59,6 @@ import (
 	"github.com/marianogappa/crypto-candles/candles/cache"
 	"github.com/marianogappa/crypto-candles/candles/coinbase"
 	"github.com/marianogappa/crypto-candles/candles/common"
-	"github.com/marianogappa/crypto-candles/candles/ftx"
 	"github.com/marianogappa/crypto-candles/candles/iterator"
 	"github.com/marianogappa/crypto-candles/candles/kucoin"
 )
@@ -123,7 +126,6 @@ func (m Market) CalculateCacheHitRatio() float64 {
 func buildExchanges() map[string]common.Exchange {
 	return map[string]common.Exchange{
 		common.BINANCE:            binance.NewBinance(),
-		common.FTX:                ftx.NewFTX(),
 		common.COINBASE:           coinbase.NewCoinbase(),
 		common.KUCOIN:             kucoin.NewKucoin(),
 		common.BINANCEUSDMFUTURES: binanceusdmfutures.NewBinanceUSDMFutures(),

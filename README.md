@@ -11,7 +11,6 @@ Universal crypto candlestick iterator library &amp; CLI
 
 - [x] Binance
 - [x] Binance USDM Futures
-- [x] FTX
 - [x] Coinbase
 - [x] Kucoin
 - [x] Bitstamp

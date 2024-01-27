@@ -15,7 +15,7 @@ import (
 func main() {
 	var (
 		flagMarketType          = flag.String("marketType", "COIN", "for now only 'COIN' is supported, representing market pairs e.g. BTC/USDT")
-		flagProvider            = flag.String("provider", "BINANCE", "one of BINANCE|FTX|COINBASE|KUCOIN|BINANCEUSDMFUTURES|BITSTAMP|BITFINEX")
+		flagProvider            = flag.String("provider", "BINANCE", "one of BINANCE|COINBASE|KUCOIN|BINANCEUSDMFUTURES|BITSTAMP|BITFINEX")
 		flagBaseAsset           = flag.String("baseAsset", "", "e.g. BTC in BTC/USDT")
 		flagQuoteAsset          = flag.String("quoteAsset", "", "e.g. USDT in BTC/USDT")
 		flagStartTime           = flag.String("startTime", "", "ISO8601/RFC3339 date to start retrieving candlesticks e.g. 2022-07-10T14:01:00Z")
