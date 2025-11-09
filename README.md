@@ -15,6 +15,7 @@ Universal crypto candlestick iterator library &amp; CLI
 - [x] Kucoin
 - [x] Bitstamp
 - [x] Bitfinex
+- [x] Bybit
 
 ## Library usage
 

@@ -56,6 +56,7 @@ import (
 	"github.com/marianogappa/crypto-candles/candles/binanceusdmfutures"
 	"github.com/marianogappa/crypto-candles/candles/bitfinex"
 	"github.com/marianogappa/crypto-candles/candles/bitstamp"
+	"github.com/marianogappa/crypto-candles/candles/bybit"
 	"github.com/marianogappa/crypto-candles/candles/cache"
 	"github.com/marianogappa/crypto-candles/candles/coinbase"
 	"github.com/marianogappa/crypto-candles/candles/common"
@@ -131,6 +132,7 @@ func buildExchanges() map[string]common.Exchange {
 		common.BINANCEUSDMFUTURES: binanceusdmfutures.NewBinanceUSDMFutures(),
 		common.BITSTAMP:           bitstamp.NewBitstamp(),
 		common.BITFINEX:           bitfinex.NewBitfinex(),
+		common.BYBIT:              bybit.NewBybit(),
 	}
 }
 
