@@ -21,6 +21,8 @@ const (
 	BITSTAMP = "BITSTAMP"
 	// BITFINEX is an enumesque string value representing the BITFINEX exchange
 	BITFINEX = "BITFINEX"
+	// BYBIT is an enumesque string value representing the BYBIT exchange
+	BYBIT = "BYBIT"
 )
 
 var (
