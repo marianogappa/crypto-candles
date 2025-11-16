@@ -55,13 +55,19 @@ import (
 	"github.com/marianogappa/crypto-candles/candles/binance"
 	"github.com/marianogappa/crypto-candles/candles/binanceusdmfutures"
 	"github.com/marianogappa/crypto-candles/candles/bitfinex"
+	"github.com/marianogappa/crypto-candles/candles/bitget"
 	"github.com/marianogappa/crypto-candles/candles/bitstamp"
 	"github.com/marianogappa/crypto-candles/candles/bybit"
 	"github.com/marianogappa/crypto-candles/candles/cache"
 	"github.com/marianogappa/crypto-candles/candles/coinbase"
 	"github.com/marianogappa/crypto-candles/candles/common"
+	"github.com/marianogappa/crypto-candles/candles/gate"
+	"github.com/marianogappa/crypto-candles/candles/htx"
 	"github.com/marianogappa/crypto-candles/candles/iterator"
 	"github.com/marianogappa/crypto-candles/candles/kucoin"
+	"github.com/marianogappa/crypto-candles/candles/mexc"
+	"github.com/marianogappa/crypto-candles/candles/okx"
+	"github.com/marianogappa/crypto-candles/candles/upbit"
 )
 
 // Market is the main struct of the candles package. From a Market, Iterators are created.
@@ -133,6 +139,12 @@ func buildExchanges() map[string]common.Exchange {
 		common.BITSTAMP:           bitstamp.NewBitstamp(),
 		common.BITFINEX:           bitfinex.NewBitfinex(),
 		common.BYBIT:              bybit.NewBybit(),
+		common.UPBIT:              upbit.NewUpbit(),
+		common.OKX:                okx.NewOKX(),
+		common.BITGET:             bitget.NewBitget(),
+		common.GATE:               gate.NewGate(),
+		common.MEXC:               mexc.NewMEXC(),
+		common.HTX:                htx.NewHTX(),
 	}
 }
 

@@ -23,6 +23,18 @@ const (
 	BITFINEX = "BITFINEX"
 	// BYBIT is an enumesque string value representing the BYBIT exchange
 	BYBIT = "BYBIT"
+	// UPBIT is an enumesque string value representing the UPBIT exchange
+	UPBIT = "UPBIT"
+	// OKX is an enumesque string value representing the OKX exchange
+	OKX = "OKX"
+	// BITGET is an enumesque string value representing the BITGET exchange
+	BITGET = "BITGET"
+	// GATE is an enumesque string value representing the GATE exchange
+	GATE = "GATE"
+	// MEXC is an enumesque string value representing the MEXC exchange
+	MEXC = "MEXC"
+	// HTX is an enumesque string value representing the HTX exchange
+	HTX = "HTX"
 )
 
 var (
@@ -211,6 +223,9 @@ var (
 
 	// ErrRateLimit means: exchange asked us to enhance our calm
 	ErrRateLimit = errors.New("exchange asked us to enhance our calm")
+
+	// ErrDataTooFarBack means: requested data point is too far back in time for the exchange
+	ErrDataTooFarBack = errors.New("requested data point is too far back in time for the exchange")
 
 	// From TickIterator
 
