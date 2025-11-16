@@ -16,6 +16,12 @@ Universal crypto candlestick iterator library &amp; CLI
 - [x] Bitstamp
 - [x] Bitfinex
 - [x] Bybit
+- [x] Upbit
+- [x] OKX
+- [x] HTX (Huobi)
+- [x] Bitget
+- [x] MEXC
+- [x] Gate
 
 ## Library usage
 
